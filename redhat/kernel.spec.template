@@ -368,14 +368,14 @@ Source25: kernel-abi-whitelists-%{distro_build}.tar.bz2
 Source50: kernel-%{version}-x86_64.config
 Source51: kernel-%{version}-x86_64-debug.config
 
-Source60: kernel-%{version}-ppc64.config
-Source61: kernel-%{version}-ppc64-debug.config
+# Source60: kernel-%{version}-ppc64.config
+# Source61: kernel-%{version}-ppc64-debug.config
 Source62: kernel-%{version}-ppc64le.config
 Source63: kernel-%{version}-ppc64le-debug.config
 
-Source70: kernel-%{version}-s390x.config
-Source71: kernel-%{version}-s390x-debug.config
-Source72: kernel-%{version}-s390x-kdump.config
+# Source70: kernel-%{version}-s390x.config
+# Source71: kernel-%{version}-s390x-debug.config
+# Source72: kernel-%{version}-s390x-kdump.config
 
 # Sources for kernel-tools
 Source2000: cpupower.service
