@@ -1121,16 +1121,16 @@ find Documentation -type d | xargs chmod u+w
     Arch=`head -1 configs/kernel-%{version}-%{_target_cpu}-debug.config | cut -b 3-` \
     rm -rf .tmp_versions \
     mv .tmp_versions.sign.debug .tmp_versions \
-    mv certs/signing_key.pem.sign.debug signing_key.pem \
-    mv certs/signing_key.x509.sign.debug signing_key.x509 \
+    mv signing_key.pem.sign.debug signing_key.pem \
+    mv signing_key.x509.sign.debug signing_key.x509 \
     %{modsign_cmd} $RPM_BUILD_ROOT/lib/modules/%{KVRA}.debug || exit 1 \
   fi \
     if [ "%{with_default}" -ne "0" ]; then \
     Arch=`head -1 configs/kernel-%{version}-%{_target_cpu}.config | cut -b 3-` \
     rm -rf .tmp_versions \
     mv .tmp_versions.sign .tmp_versions \
-    mv certs/signing_key.pem.sign signing_key.pem \
-    mv certs/signing_key.x509.sign signing_key.x509 \
+    mv signing_key.pem.sign signing_key.pem \
+    mv signing_key.x509.sign signing_key.x509 \
     %{modsign_cmd} $RPM_BUILD_ROOT/lib/modules/%{KVRA} || exit 1 \
   fi \
 %{nil}
