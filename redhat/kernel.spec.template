@@ -150,6 +150,11 @@ Summary: The Linux kernel
 
 # Per-arch tweaks
 
+%ifarch aarch64
+%define asmarch arm64
+%define hdrarch arm64
+%endif
+
 %ifarch i686
 %define asmarch x86
 %define hdrarch i386
@@ -208,7 +213,7 @@ Summary: The Linux kernel
 # Which is a BadThing(tm).
 
 # We only build kernel-headers on the following...
-%define nobuildarches i686 s390 ppc
+%define nobuildarches aarch64 i686 ppc ppc64 s390 s390x
 
 %ifarch %nobuildarches
 %define with_default 0
@@ -291,7 +296,7 @@ Version: %{rpmversion}
 Release: %{pkg_release}
 # DO NOT CHANGE THE 'ExclusiveArch' LINE TO TEMPORARILY EXCLUDE AN ARCHITECTURE BUILD.
 # SET %%nobuildarches (ABOVE) INSTEAD
-ExclusiveArch: noarch x86_64 ppc ppc64le
+ExclusiveArch: aarch64 i686 noarch ppc ppc64 ppc64le s390 s390x x86_64
 ExclusiveOS: Linux
 
 %kernel_reqprovconf
