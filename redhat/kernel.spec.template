@@ -153,6 +153,10 @@ Summary: The Linux kernel
 %ifarch aarch64
 %define asmarch arm64
 %define hdrarch arm64
+%define all_arch_configs kernel-%{version}-aarch64*.config
+%define make_target Image.gz
+%define kernel_image arch/arm64/boot/Image.gz
+%define image_install_path boot
 %endif
 
 %ifarch i686
@@ -213,7 +217,7 @@ Summary: The Linux kernel
 # Which is a BadThing(tm).
 
 # We only build kernel-headers on the following...
-%define nobuildarches aarch64 i686 ppc ppc64 s390 s390x
+%define nobuildarches i686 ppc ppc64 s390 s390x
 
 %ifarch %nobuildarches
 %define with_default 0
@@ -225,7 +229,7 @@ Summary: The Linux kernel
 %endif
 
 # Architectures we build tools/cpupower on
-%define cpupowerarchs x86_64 ppc64 ppc64le
+%define cpupowerarchs aarch64 ppc64 ppc64le x86_64
 
 #
 # Three sets of minimum package version requirements in the form of Conflicts:
@@ -381,6 +385,9 @@ Source63: kernel-%{version}-ppc64le-debug.config
 # Source70: kernel-%{version}-s390x.config
 # Source71: kernel-%{version}-s390x-debug.config
 # Source72: kernel-%{version}-s390x-kdump.config
+
+Source80: kernel-%{version}-aarch64.config
+Source81: kernel-%{version}-aarch64-debug.config
 
 # Sources for kernel-tools
 Source2000: cpupower.service

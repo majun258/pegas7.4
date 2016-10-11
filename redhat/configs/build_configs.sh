@@ -39,7 +39,9 @@ function merge_configs()
 		perl merge.pl config-$config config-merging > config-merged
 		mv config-merged config-merging
 	done
-	if [ "x$arch" == "xppc64" ]; then
+	if [ "x$arch" == "xaarch64" ]; then
+		echo "# arm64" > $name
+	elif [ "x$arch" == "xppc64" ]; then
 		echo "# powerpc" > $name
 	elif [ "x$arch" == "xppc64le" ]; then
 		echo "# powerpc" > $name
