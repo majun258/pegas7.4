@@ -292,7 +292,7 @@ AutoReq: no\
 AutoProv: yes\
 %{nil}
 
-Name: kernel%{?variant}
+Name: kernel-pegas%{?variant}
 Group: System Environment/Kernel
 License: GPLv2
 URL: http://www.kernel.org/
@@ -389,7 +389,7 @@ Source63: kernel-%{version}-ppc64le-debug.config
 Source80: kernel-%{version}-aarch64.config
 Source81: kernel-%{version}-aarch64-debug.config
 
-# Sources for kernel-tools
+# Sources for kernel-pegas-tools
 Source2000: cpupower.service
 Source2001: cpupower.config
 
@@ -409,6 +409,7 @@ input and output, etc.
 %package doc
 Summary: Various documentation bits found in the kernel source
 Group: Documentation
+Conflicts: kernel-doc
 AutoReqProv: no
 %description doc
 This package contains documentation files from the kernel
@@ -422,10 +423,14 @@ options that can be passed to Linux kernel modules at load time.
 %package headers
 Summary: Header files for the Linux kernel for use by glibc
 Group: Development/System
+# 3.11 is not a real release, but make sure we conflict with all
+# RHEL 7 kernel-headers versions...
+Conflicts: kernel-headers < 3.11
+Provides: kernel-headers = %{version}-%{release}
 Obsoletes: glibc-kernheaders < 3.0-46
 Provides: glibc-kernheaders = 3.0-46
 %description headers
-Kernel-headers includes the C header files that specify the interface
+kernel-pegas-headers includes the C header files that specify the interface
 between the Linux kernel and userspace libraries and programs.  The
 header files define structures and constants that are needed for
 building most standard programs and are also needed for rebuilding the
@@ -434,71 +439,78 @@ glibc package.
 %package bootwrapper
 Summary: Boot wrapper files for generating combined kernel + initrd images
 Group: Development/System
+Conflicts: kernel-bootwrapper
 Requires: gzip binutils
 %description bootwrapper
-Kernel-bootwrapper contains the wrapper code which makes bootable "zImage"
+kernel-pegas-bootwrapper contains the wrapper code which makes bootable "zImage"
 files combining both kernel and initial ramdisk.
 
 %package debuginfo-common-%{_target_cpu}
 Summary: Kernel source files used by %{name}-debuginfo packages
 Group: Development/Debug
+Conflicts: kernel-debuginfo-common-%{_target_cpu}
 %description debuginfo-common-%{_target_cpu}
 This package is required by %{name}-debuginfo subpackages.
 It provides the kernel source files common to all builds.
 
 %if %{with_perf}
-%package -n perf
+%package -n perf-pegas
 Summary: Performance monitoring for the Linux kernel
 Group: Development/System
 License: GPLv2
-%description -n perf
+Conflicts: perf
+%description -n perf-pegas
 This package contains the perf tool, which enables performance monitoring
 of the Linux kernel.
 
-%package -n perf-debuginfo
+%package -n perf-pegas-debuginfo
 Summary: Debug information for package perf
 Group: Development/Debug
+Conflicts: perf-debuginfo
 Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
 AutoReqProv: no
-%description -n perf-debuginfo
+%description -n perf-pegas-debuginfo
 This package provides debug information for the perf package.
 
 # Note that this pattern only works right to match the .build-id
 # symlinks because of the trailing nonmatching alternation and
 # the leading .*, because of find-debuginfo.sh's buggy handling
 # of matching the pattern against the symlinks file.
-%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/perf(\.debug)?|.*%%{_libexecdir}/perf-core/.*|XXX' -o perf-debuginfo.list}
+%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/perf(\.debug)?|.*%%{_libexecdir}/perf-core/.*|XXX' -o perf-pegas-debuginfo.list}
 
-%package -n python-perf
+%package -n python-perf-pegas
 Summary: Python bindings for apps which will manipulate perf events
 Group: Development/Libraries
-%description -n python-perf
-The python-perf package contains a module that permits applications
+Conflicts: python-perf
+%description -n python-perf-pegas
+The python-perf-pegas package contains a module that permits applications
 written in the Python programming language to use the interface
 to manipulate perf events.
 
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
 
-%package -n python-perf-debuginfo
+%package -n python-perf-pegas-debuginfo
 Summary: Debug information for package perf python bindings
 Group: Development/Debug
+Conflicts: python-perf-debuginfo
 Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
 AutoReqProv: no
-%description -n python-perf-debuginfo
+%description -n python-perf-pegas-debuginfo
 This package provides debug information for the perf python bindings.
 
 # the python_sitearch macro should already be defined from above
-%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{python_sitearch}/perf.so(\.debug)?|XXX' -o python-perf-debuginfo.list}
+%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{python_sitearch}/perf.so(\.debug)?|XXX' -o python-perf-pegas-debuginfo.list}
 
 
 %endif # with_perf
 
 %if %{with_tools}
 
-%package -n kernel-tools
+%package -n kernel-pegas-tools
 Summary: Assortment of tools for the Linux kernel
 Group: Development/System
 License: GPLv2
+Conflicts: kernel-tools
 Provides:  cpupowerutils = 1:009-0.6.p1
 Obsoletes: cpupowerutils < 1:009-0.6.p1
 Provides:  cpufreq-utils = 1:009-0.6.p1
@@ -506,45 +518,48 @@ Provides:  cpufrequtils = 1:009-0.6.p1
 Obsoletes: cpufreq-utils < 1:009-0.6.p1
 Obsoletes: cpufrequtils < 1:009-0.6.p1
 Obsoletes: cpuspeed < 1:2.0
-Requires: kernel-tools-libs = %{version}-%{release}
-%description -n kernel-tools
+Requires: kernel-pegas-tools-libs = %{version}-%{release}
+%description -n kernel-pegas-tools
 This package contains the tools/ directory from the kernel source
 and the supporting documentation.
 
-%package -n kernel-tools-libs
-Summary: Libraries for the kernels-tools
+%package -n kernel-pegas-tools-libs
+Summary: Libraries for the kernels-pegas-tools
 Group: Development/System
 License: GPLv2
-%description -n kernel-tools-libs
+Conflicts: kernel-tools-libs
+%description -n kernel-pegas-tools-libs
 This package contains the libraries built from the tools/ directory
 from the kernel source.
 
-%package -n kernel-tools-libs-devel
+%package -n kernel-pegas-tools-libs-devel
 Summary: Assortment of tools for the Linux kernel
 Group: Development/System
 License: GPLv2
-Requires: kernel-tools = %{version}-%{release}
+Conflicts: kernel-tools-libs-devel
+Requires: kernel-pegas-tools = %{version}-%{release}
 Provides:  cpupowerutils-devel = 1:009-0.6.p1
 Obsoletes: cpupowerutils-devel < 1:009-0.6.p1
-Requires: kernel-tools-libs = %{version}-%{release}
-Provides: kernel-tools-devel
-%description -n kernel-tools-libs-devel
+Requires: kernel-pegas-tools-libs = %{version}-%{release}
+Provides: kernel-pegas-tools-devel
+%description -n kernel-pegas-tools-libs-devel
 This package contains the development files for the tools/ directory from
 the kernel source.
 
-%package -n kernel-tools-debuginfo
-Summary: Debug information for package kernel-tools
+%package -n kernel-pegas-tools-debuginfo
+Summary: Debug information for package kernel-pegas-tools
 Group: Development/Debug
+Conflicts: kernel-tools-debuginfo
 Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
 AutoReqProv: no
-%description -n kernel-tools-debuginfo
-This package provides debug information for package kernel-tools.
+%description -n kernel-pegas-tools-debuginfo
+This package provides debug information for package kernel-pegas-tools.
 
 # Note that this pattern only works right to match the .build-id
 # symlinks because of the trailing nonmatching alternation and
 # the leading .*, because of find-debuginfo.sh's buggy handling
 # of matching the pattern against the symlinks file.
-%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/centrino-decode(\.debug)?|.*%%{_bindir}/powernow-k8-decode(\.debug)?|.*%%{_bindir}/cpupower(\.debug)?|.*%%{_libdir}/libcpupower.*|.*%%{_libdir}/libcpupower.*|.*%%{_bindir}/turbostat(\.debug)?|.*%%{_bindir}/x86_energy_perf_policy(\.debug)?|.*%%{_bindir}/tmon(\.debug)?|XXX' -o kernel-tools-debuginfo.list}
+%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/centrino-decode(\.debug)?|.*%%{_bindir}/powernow-k8-decode(\.debug)?|.*%%{_bindir}/cpupower(\.debug)?|.*%%{_libdir}/libcpupower.*|.*%%{_libdir}/libcpupower.*|.*%%{_bindir}/turbostat(\.debug)?|.*%%{_bindir}/x86_energy_perf_policy(\.debug)?|.*%%{_bindir}/tmon(\.debug)?|XXX' -o kernel-pegas-tools-debuginfo.list}
 
 %endif # with_tools
 
@@ -556,11 +571,12 @@ Group: Development/System
 kernel-gcov includes the gcov graph and source files for gcov coverage collection.
 %endif
 
-%package -n kernel-abi-whitelists
+%package -n kernel-pegas-abi-whitelists
 Summary: The Red Hat Enterprise Linux kernel ABI symbol whitelists
 Group: System Environment/Kernel
+Conflicts: kernel-abi-whitelists
 AutoReqProv: no
-%description -n kernel-abi-whitelists
+%description -n kernel-pegas-abi-whitelists
 The kABI package contains information pertaining to the Red Hat Enterprise
 Linux kernel ABI, including lists of kernel symbols that are needed by
 external Linux kernel modules, and a yum plugin to aid enforcement.
@@ -596,7 +612,7 @@ Provides: kernel-devel-uname-r = %{KVRA}%{?1:.%{1}}\
 AutoReqProv: no\
 Requires(pre): /usr/bin/find\
 Requires: perl\
-%description -n kernel%{?variant}%{?1:-%{1}}-devel\
+%description -n kernel-pegas%{?variant}%{?1:-%{1}}-devel\
 This package provides kernel headers and makefiles sufficient to build modules\
 against the %{?2:%{2} }kernel package.\
 %{nil}
@@ -696,7 +712,7 @@ ApplyOptionalPatch()
   fi
 }
 
-%setup -q -n kernel-%{rheltarball} -c
+%setup -q -n kernel-pegas-%{rheltarball} -c
 mv linux-%{rheltarball} linux-%{KVRA}
 cd linux-%{KVRA}
 
@@ -893,7 +909,7 @@ BuildKernel() {
       echo > ldconfig-kernel.conf "\
 # Placeholder file, no vDSO hwcap entries used in this kernel."
     fi
-    %{__install} -D -m 444 ldconfig-kernel.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/kernel-$KernelVer.conf
+    %{__install} -D -m 444 ldconfig-kernel.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/kernel-pegas-$KernelVer.conf
 %endif
 
     # And save the headers/makefiles etc for building modules against
@@ -1298,10 +1314,10 @@ rm -rf $RPM_BUILD_ROOT
 ###
 
 %if %{with_tools}
-%post -n kernel-tools
+%post -n kernel-pegas-tools
 /sbin/ldconfig
 
-%postun -n kernel-tools
+%postun -n kernel-pegas-tools
 /sbin/ldconfig
 %endif
 
@@ -1335,8 +1351,8 @@ if [ -x %{_sbindir}/weak-modules ]\
 then\
     %{_sbindir}/weak-modules --add-kernel %{KVRA}%{?1:.%{1}} || exit $?\
 fi\
-%{_sbindir}/new-kernel-pkg --package kernel%{?-v:-%{-v*}} --mkinitrd --dracut --depmod --update %{KVRA}%{?-v:.%{-v*}} || exit $?\
-%{_sbindir}/new-kernel-pkg --package kernel%{?1:-%{1}} --rpmposttrans %{KVRA}%{?1:.%{1}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package kernel-pegas%{?-v:-%{-v*}} --mkinitrd --dracut --depmod --update %{KVRA}%{?-v:.%{-v*}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package kernel-pegas%{?1:-%{1}} --rpmposttrans %{KVRA}%{?1:.%{1}} || exit $?\
 %{nil}
 
 #
@@ -1354,7 +1370,7 @@ if [ `uname -i` == "x86_64" ] &&\
   /bin/sed -r -i -e 's/^DEFAULTKERNEL=%{-r*}$/DEFAULTKERNEL=kernel%{?-v:-%{-v*}}/' /etc/sysconfig/kernel || exit $?\
 fi}\
 %{expand:\
-%{_sbindir}/new-kernel-pkg --package kernel%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package kernel-pegas%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
 }\
 %{nil}
 
@@ -1432,13 +1448,13 @@ fi
 %endif
 
 %if %{with_kernel_abi_whitelists}
-%files -n kernel-abi-whitelists
+%files -n kernel-pegas-abi-whitelists
 %defattr(-,root,root,-)
 /lib/modules/kabi-*
 %endif
 
 %if %{with_perf}
-%files -n perf
+%files -n perf-pegas
 %defattr(-,root,root)
 %{_bindir}/perf
 %dir %{_libexecdir}/perf-core
@@ -1449,21 +1465,21 @@ fi
 %{_datadir}/perf-core/strace/groups
 %{_datadir}/doc/perf-tip/tips.txt
 
-%files -n python-perf
+%files -n python-perf-pegas
 %defattr(-,root,root)
 %{python_sitearch}
 
 %if %{with_debuginfo}
-%files -f perf-debuginfo.list -n perf-debuginfo
+%files -f perf-pegas-debuginfo.list -n perf-pegas-debuginfo
 %defattr(-,root,root)
 
-%files -f python-perf-debuginfo.list -n python-perf-debuginfo
+%files -f python-perf-pegas-debuginfo.list -n python-perf-pegas-debuginfo
 %defattr(-,root,root)
 %endif
 %endif
 
 %if %{with_tools}
-%files -n kernel-tools -f cpupower.lang
+%files -n kernel-pegas-tools -f cpupower.lang
 %defattr(-,root,root)
 %ifarch %{cpupowerarchs}
 %{_bindir}/cpupower
@@ -1483,17 +1499,17 @@ fi
 %endif
 %{_bindir}/tmon
 %if %{with_debuginfo}
-%files -f kernel-tools-debuginfo.list -n kernel-tools-debuginfo
+%files -f kernel-pegas-tools-debuginfo.list -n kernel-pegas-tools-debuginfo
 %defattr(-,root,root)
 %endif
 
 %ifarch %{cpupowerarchs}
-%files -n kernel-tools-libs
+%files -n kernel-pegas-tools-libs
 %defattr(-,root,root)
 %{_libdir}/libcpupower.so.0
 %{_libdir}/libcpupower.so.0.0.1
 
-%files -n kernel-tools-libs-devel
+%files -n kernel-pegas-tools-libs-devel
 %defattr(-,root,root)
 %{_libdir}/libcpupower.so
 %{_includedir}/cpufreq.h
@@ -1536,7 +1552,7 @@ fi
 /lib/modules/%{KVRA}%{?2:.%{2}}/weak-updates\
 %ifarch %{vdso_arches}\
 /lib/modules/%{KVRA}%{?2:.%{2}}/vdso\
-/etc/ld.so.conf.d/kernel-%{KVRA}%{?2:.%{2}}.conf\
+/etc/ld.so.conf.d/kernel-pegas-%{KVRA}%{?2:.%{2}}.conf\
 %endif\
 /lib/modules/%{KVRA}%{?2:.%{2}}/modules.*\
 %ghost /boot/initramfs-%{KVRA}%{?2:.%{2}}.img\
