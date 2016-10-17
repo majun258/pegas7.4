@@ -69,7 +69,7 @@ echo "Creating diff for review ($tmpdir/diff) and changelog"
 # differences were found
 diff -X $redhat/git/dontdiff -upr $tmpdir/kernel $redhat/rpm/SOURCES/ > $tmpdir/diff;
 # creating the changelog file
-$redhat/scripts/create_distgit_changelog.sh $redhat/rpm/SOURCES/kernel.spec "$rhdistgit_zstream_flag" >$tmpdir/changelog
+$redhat/scripts/create_distgit_changelog.sh $redhat/rpm/SOURCES/kernel-pegas.spec "$rhdistgit_zstream_flag" >$tmpdir/changelog
 
 # all done
 echo "$tmpdir"

@@ -1,4 +1,4 @@
-kernel.spec
+kernel-pegas.spec
 check-kabi
 extra_certificates
 x509.genkey

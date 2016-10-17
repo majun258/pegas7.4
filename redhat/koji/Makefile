@@ -27,8 +27,8 @@ sources: buildid
 	echo $(BUILDID) > ../../localversion
 	$(MAKE) -C ../ rh-sources
 	mv -f ../rpm/SOURCES/* .
-	rm -f ./kernel.spec
-	mv ../rpm/SPECS/kernel.spec .
+	rm -f ./kernel-pegas.spec
+	mv ../rpm/SPECS/kernel-pegas.spec .
 
 test:	buildid
 	echo $(BUILDID)

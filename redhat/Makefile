@@ -139,32 +139,32 @@ rh-test-patch:
 	@mv $(TESTPATCH).tmp $(TESTPATCH);
 
 rh-all-rpms: rh-sources
-	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --target $(MACH) -ba $(RPM)/SOURCES/kernel.spec
+	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --target $(MACH) -ba $(RPM)/SOURCES/kernel-pegas.spec
 
 rh-srpm: rh-sources
-	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --nodeps -bs $(RPM)/SOURCES/kernel.spec
+	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --nodeps -bs $(RPM)/SOURCES/kernel-pegas.spec
 
 rh-srpm-gcov:
 	make rh-sources BUILDID=".gcov"
-	sed -i 's/%define with_gcov.*/%define with_gcov 1/' $(RPM)/SOURCES/kernel.spec
-	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --nodeps -bs $(RPM)/SOURCES/kernel.spec
+	sed -i 's/%define with_gcov.*/%define with_gcov 1/' $(RPM)/SOURCES/kernel-pegas.spec
+	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --nodeps -bs $(RPM)/SOURCES/kernel-pegas.spec
 
 rh-rpms: rh-sources
-	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --target $(MACH) --target noarch -bb $(RPM)/SOURCES/kernel.spec
+	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --target $(MACH) --target noarch -bb $(RPM)/SOURCES/kernel-pegas.spec
 
 rh-kernel-%: rh-sources
-	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --target $(MACH) --with $* --without vdso_install --without perf --without tools -bb $(RPM)/SOURCES/kernel.spec
+	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --target $(MACH) --with $* --without vdso_install --without perf --without tools -bb $(RPM)/SOURCES/kernel-pegas.spec
 
 rh-prep: rh-sources
-	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --nodeps --target noarch -bp $(RPM)/SOURCES/kernel.spec
+	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --nodeps --target noarch -bp $(RPM)/SOURCES/kernel-pegas.spec
 
 rh-perf: rh-sources
-	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --without up --without smp --without kdump --without debug --without doc --without headers --without  --without doc --without debuginfo --target $(MACH) -bb $(RPM)/SOURCES/kernel.spec
+	$(RPMBUILD) --define "_sourcedir $(SOURCES)" --define "_builddir $(RPM)/BUILD" --define "_srcrpmdir $(RPM)/SRPMS" --define "_rpmdir $(RPM)/RPMS" --define "_specdir $(RPM)/SPECS" --define "dist $(DIST)" --without up --without smp --without kdump --without debug --without doc --without headers --without  --without doc --without debuginfo --target $(MACH) -bb $(RPM)/SOURCES/kernel-pegas.spec
 
 # unless you know what you're doing, you don't want to use the next three ones
 rh-release-finish: setup-source
 	@$(REDHAT)/scripts/update_changelog.sh $(REDHAT) "$(STAMP_VERSION)-$(PREBUILD)$(BUILD)$(DIST)$(BUILDID)"
-	@git commit -s ../Makefile Makefile.common kernel.spec.template -m "[redhat] kernel-$(STAMP_VERSION)-$(PREBUILD)$(BUILD)$(DIST)$(BUILDID)"
+	@git commit -s ../Makefile Makefile.common kernel-pegas.spec.template -m "[redhat] kernel-$(STAMP_VERSION)-$(PREBUILD)$(BUILD)$(DIST)$(BUILDID)"
 	@$(MAKE) rh-configs
 	@$(MAKE) rh-kabi
 	@$(MAKE) sources-rh
@@ -186,11 +186,11 @@ rh-brew rh-koji: rh-%: rh-srpm
 rhg-brew rhg-koji: rhg-%:
 	$* build $(BUILD_FLAGS) $(BUILD_TARGET) "$(RHGITURL)?redhat/koji#$(RHGITCOMMIT)"
 
-$(REDHAT)/rpm/SOURCES/kernel.spec:
+$(REDHAT)/rpm/SOURCES/kernel-pegas.spec:
 	@echo "rh-sources"
 	@$(MAKE) rh-sources
 
-rh-dist-git: $(REDHAT)/rpm/SOURCES/kernel.spec $(TARBALL) $(KABI_TARBALL)
+rh-dist-git: $(REDHAT)/rpm/SOURCES/kernel-pegas.spec $(TARBALL) $(KABI_TARBALL)
 ifeq ("$(RHDISTGIT_BRANCH)", "")
  $(error RHDISTGIT_BRANCH unset)
 endif

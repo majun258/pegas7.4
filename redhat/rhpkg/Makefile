@@ -1,5 +1,5 @@
 # Makefile for source rpm: kernel
-SPECFILE := kernel.spec
+SPECFILE := kernel-pegas.spec
 
 # use noarch for make prep instead of the current CPU
 # noarch creates and checks all config files not just the current one,
@@ -100,13 +100,13 @@ debug:
 
 	@perl -pi -e 's/CONFIG_NR_CPUS=256/CONFIG_NR_CPUS=512/' config-x86_64-generic
 
-	@perl -pi -e 's/^%define debugbuildsenabled 1/%define debugbuildsenabled 0/' kernel.spec
-	@perl -pi -e 's/^%define rawhide_skip_docs 0/%define rawhide_skip_docs 1/' kernel.spec
+	@perl -pi -e 's/^%define debugbuildsenabled 1/%define debugbuildsenabled 0/' kernel-pegas.spec
+	@perl -pi -e 's/^%define rawhide_skip_docs 0/%define rawhide_skip_docs 1/' kernel-pegas.spec
 
 nodebuginfo:
-	@perl -pi -e 's/^%define with_debuginfo %\{\?_without_debuginfo: 0\} %\{\?\!_without_debuginfo: 1\}/%define with_debuginfo %\{\?_without_debuginfo: 0\} %\{\?\!_without_debuginfo: 0\}/' kernel.spec
+	@perl -pi -e 's/^%define with_debuginfo %\{\?_without_debuginfo: 0\} %\{\?\!_without_debuginfo: 1\}/%define with_debuginfo %\{\?_without_debuginfo: 0\} %\{\?\!_without_debuginfo: 0\}/' kernel-pegas.spec
 nodebug: release
-	@perl -pi -e 's/^%define debugbuildsenabled 1/%define debugbuildsenabled 0/' kernel.spec
+	@perl -pi -e 's/^%define debugbuildsenabled 1/%define debugbuildsenabled 0/' kernel-pegas.spec
 release:
 	@perl -pi -e 's/CONFIG_SLUB_DEBUG_ON=y/# CONFIG_SLUB_DEBUG_ON is not set/' config-nodebug
 	@perl -pi -e 's/CONFIG_LOCK_STAT=y/# CONFIG_LOCK_STAT is not set/' config-nodebug
@@ -177,8 +177,8 @@ release:
 
 	@perl -pi -e 's/CONFIG_NR_CPUS=512/CONFIG_NR_CPUS=256/' config-x86_64-generic
 
-	@perl -pi -e 's/^%define debugbuildsenabled 0/%define debugbuildsenabled 1/' kernel.spec
-	@perl -pi -e 's/^%define rawhide_skip_docs 1/%define rawhide_skip_docs 0/' kernel.spec
+	@perl -pi -e 's/^%define debugbuildsenabled 0/%define debugbuildsenabled 1/' kernel-pegas.spec
+	@perl -pi -e 's/^%define rawhide_skip_docs 1/%define rawhide_skip_docs 0/' kernel-pegas.spec
 
 unused-kernel-patches:
 	@for f in *.patch; do if [ -e $$f ]; then (egrep -q "^Patch[[:digit:]]+:[[:space:]]+$$f" $(SPECFILE) || echo "Unused:    $$f") && egrep -q "^ApplyPatch[[:space:]]+$$f|^ApplyOptionalPatch[[:space:]]+$$f" $(SPECFILE) || echo "Unapplied: $$f"; fi; done

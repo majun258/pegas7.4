@@ -10,7 +10,7 @@ tree="$1";
 cloned="$2";
 redhat="$1/redhat";
 sources="$redhat/rpm/SOURCES";
-spec="$sources/kernel.spec";
+spec="$sources/kernel-pegas.spec";
 
 function die
 {
