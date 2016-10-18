@@ -224,6 +224,7 @@ Summary: The Linux kernel
 
 %ifarch %nobuildarches
 %define with_default 0
+%define with_debug 0
 %define with_debuginfo 0
 %define with_kdump 0
 %define with_tools 0
