@@ -134,6 +134,9 @@ Summary: The Linux kernel
 %define with_kernel_abi_whitelists 0
 %endif
 
+# pegas has no kabi stuff yet, keep abi whitelists temporarily disabled
+%define with_kernel_abi_whitelists 0
+
 # don't build noarch kernels or headers (duh)
 %ifarch noarch
 %define with_default 0
@@ -372,7 +375,9 @@ Source21: Module.kabi_ppc64
 Source22: Module.kabi_ppc64le
 Source23: Module.kabi_s390x
 
+%if %{with_kernel_abi_whitelists}
 Source25: kernel-abi-whitelists-%{distro_build}.tar.bz2
+%endif
 
 Source50: kernel-%{version}-x86_64.config
 Source51: kernel-%{version}-x86_64-debug.config
