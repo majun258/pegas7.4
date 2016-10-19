@@ -223,6 +223,7 @@ Summary: The Linux kernel
 %define nobuildarches i686 ppc ppc64 s390 s390x
 
 %ifarch %nobuildarches
+%define with_bootwrapper 0
 %define with_default 0
 %define with_debug 0
 %define with_debuginfo 0
