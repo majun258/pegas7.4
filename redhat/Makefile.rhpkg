@@ -1,5 +1,8 @@
 # variables that can be overrided by ~/.rhel7git.mk or $(TOPDIR)/.rhel7git.mk
 #
+
+include Makefile.common
+
 # Kerberos username for pkgs.devel.redhat.com
 RHDISTGIT_USER:="$(shell whoami)"
 # Local dist-git _clean_ clone. To be used when updating dist-git
@@ -20,4 +23,4 @@ ifeq ("$(RHDISTGIT_CACHE)", "")
  endif
 endif
 
-RHDISTGIT:="ssh://$(RHDISTGIT_USER)@pkgs.devel.redhat.com/rpms/kernel-pegas"
+RHDISTGIT:="ssh://$(RHDISTGIT_USER)@pkgs.devel.redhat.com/rpms/$(PACKAGE_NAME)"

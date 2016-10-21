@@ -8,6 +8,7 @@
 # $5: kernel source tarball
 # $6: kabi whitelists tarball
 # $7: zstream build
+# $8: package name
 
 rhdistgit_branch=$1;
 rhdistgit_cache=$2;
@@ -16,6 +17,7 @@ rhdistgit_server=$4;
 rhdistgit_tarball=$5;
 rhdistgit_kabi_tarball=$6;
 rhdistgit_zstream_flag=$7;
+package_name=$8;
 
 redhat=$(dirname $0)/..;
 topdir=$redhat/..;
@@ -29,8 +31,8 @@ function die
 function upload_kabi_tarball()
 {
 	echo "Uploading kernel-abi-whitelists tarball"
-	sed -i "/kernel-abi-whitelist.*.tar.bz2/d" $tmpdir/kernel-pegas/sources;
-	sed -i "/kernel-abi-whitelist.*.tar.bz2/d" $tmpdir/kernel-pegas/.gitignore;
+	sed -i "/kernel-abi-whitelist.*.tar.bz2/d" $tmpdir/$package_name/sources;
+	sed -i "/kernel-abi-whitelist.*.tar.bz2/d" $tmpdir/$package_name/.gitignore;
 	rhpkg upload $rhdistgit_kabi_tarball >/dev/null || die "uploading kabi tarball";
 }
 
@@ -45,31 +47,31 @@ tmpdir=$($redhat/scripts/clone_tree.sh "$rhdistgit_server" "$rhdistgit_cache" "$
 
 echo "Switching the branch"
 # change in the correct branch
-cd $tmpdir/kernel-pegas;
+cd $tmpdir/$package_name;
 rhpkg switch-branch $rhdistgit_branch || die "switching to branch $rhdistgit_branch";
 
 echo "Copying updated files"
 # copy the required files (redhat/git/files)
-$redhat/scripts/copy_files.sh "$topdir" "$tmpdir"
+$redhat/scripts/copy_files.sh "$topdir" "$tmpdir" "$package_name";
 
 echo "Uploading new tarballs"
 # upload tarballs
-sed -i "/linux-3.*.el7.tar.xz/d" $tmpdir/kernel-pegas/sources;
-sed -i "/linux-3.*.el7.tar.xz/d" $tmpdir/kernel-pegas/.gitignore;
+sed -i "/linux-3.*.el7.tar.xz/d" $tmpdir/$package_name/sources;
+sed -i "/linux-3.*.el7.tar.xz/d" $tmpdir/$package_name/.gitignore;
 rhpkg upload $rhdistgit_tarball >/dev/null || die "uploading kernel tarball";
 
 # Only upload kernel-abi-whitelists tarball if its release counter changed.
 if [ "$rhdistgit_zstream_flag" == "no" ]; then
-	whitelists_file="$(awk '/kernel-abi-whitelists/ {print $2}' $tmpdir/kernel-pegas/sources)"
+	whitelists_file="$(awk '/kernel-abi-whitelists/ {print $2}' $tmpdir/$package_name/sources)"
 	grep "$whitelists_file" $rhdistgit_kabi_tarball >/dev/null || upload_kabi_tarball;
 fi
 
 echo "Creating diff for review ($tmpdir/diff) and changelog"
 # diff the result (redhat/cvs/dontdiff). note: diff reuturns 1 if
 # differences were found
-diff -X $redhat/git/dontdiff -upr $tmpdir/kernel-pegas $redhat/rpm/SOURCES/ > $tmpdir/diff;
+diff -X $redhat/git/dontdiff -upr $tmpdir/$package_name $redhat/rpm/SOURCES/ > $tmpdir/diff;
 # creating the changelog file
-$redhat/scripts/create_distgit_changelog.sh $redhat/rpm/SOURCES/kernel-pegas.spec "$rhdistgit_zstream_flag" >$tmpdir/changelog
+$redhat/scripts/create_distgit_changelog.sh $redhat/rpm/SOURCES/$package_name.spec "$rhdistgit_zstream_flag" >$tmpdir/changelog
 
 # all done
 echo "$tmpdir"

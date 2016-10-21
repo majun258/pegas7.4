@@ -1,6 +1,8 @@
 # We have to override the new %%install behavior because, well... the kernel is special.
 %global __spec_install_pre %{___build_pre}
 
+%global package_name kernel-pegas
+
 Summary: The Linux kernel
 
 # % define buildid .local
@@ -143,7 +145,7 @@ Summary: The Linux kernel
 %define with_headers 0
 %define with_tools 0
 %define with_perf 0
-%define all_arch_configs kernel-%{version}-*.config
+%define all_arch_configs %{package_name}-%{version}-*.config
 %endif
 
 # sparse blows up on ppc64
@@ -156,7 +158,7 @@ Summary: The Linux kernel
 %ifarch aarch64
 %define asmarch arm64
 %define hdrarch arm64
-%define all_arch_configs kernel-%{version}-aarch64*.config
+%define all_arch_configs %{package_name}-%{version}-aarch64*.config
 %define make_target Image.gz
 %define kernel_image arch/arm64/boot/Image.gz
 %define image_install_path boot
@@ -169,7 +171,7 @@ Summary: The Linux kernel
 
 %ifarch x86_64
 %define asmarch x86
-%define all_arch_configs kernel-%{version}-x86_64*.config
+%define all_arch_configs %{package_name}-%{version}-x86_64*.config
 %define image_install_path boot
 %define kernel_image arch/x86/boot/bzImage
 %endif
@@ -182,7 +184,7 @@ Summary: The Linux kernel
 %ifarch ppc64 ppc64le
 %define asmarch powerpc
 %define hdrarch powerpc
-%define all_arch_configs kernel-%{version}-ppc64*.config
+%define all_arch_configs %{package_name}-%{version}-ppc64*.config
 %define image_install_path boot
 %define make_target vmlinux
 %define kernel_image vmlinux
@@ -195,7 +197,7 @@ Summary: The Linux kernel
 %ifarch s390x
 %define asmarch s390
 %define hdrarch s390
-%define all_arch_configs kernel-%{version}-s390x*.config
+%define all_arch_configs %{package_name}-%{version}-s390x*.config
 %define image_install_path boot
 %define kernel_image arch/s390/boot/bzImage
 %define with_tools 0
@@ -275,6 +277,7 @@ Summary: The Linux kernel
 %define kernel_reqprovconf \
 Provides: kernel = %{rpmversion}-%{pkg_release}\
 Provides: kernel-%{_target_cpu} = %{rpmversion}-%{pkg_release}%{?1:.%{1}}\
+Provides: %{package_name}-%{_target_cpu} = %{rpmversion}-%{pkg_release}%{?1:.%{1}}\
 Provides: kernel-drm = 4.3.0\
 Provides: kernel-drm-nouveau = 16\
 Provides: kernel-modeset = 1\
@@ -297,7 +300,7 @@ AutoReq: no\
 AutoProv: yes\
 %{nil}
 
-Name: kernel-pegas%{?variant}
+Name: %{package_name}%{?variant}
 Group: System Environment/Kernel
 License: GPLv2
 URL: http://www.kernel.org/
@@ -381,20 +384,20 @@ Source23: Module.kabi_s390x
 Source25: kernel-abi-whitelists-%{distro_build}.tar.bz2
 %endif
 
-Source50: kernel-%{version}-x86_64.config
-Source51: kernel-%{version}-x86_64-debug.config
+Source50: %{package_name}-%{version}-x86_64.config
+Source51: %{package_name}-%{version}-x86_64-debug.config
 
-# Source60: kernel-%{version}-ppc64.config
-# Source61: kernel-%{version}-ppc64-debug.config
-Source62: kernel-%{version}-ppc64le.config
-Source63: kernel-%{version}-ppc64le-debug.config
+# Source60: %{package_name}-%{version}-ppc64.config
+# Source61: %{package_name}-%{version}-ppc64-debug.config
+Source62: %{package_name}-%{version}-ppc64le.config
+Source63: %{package_name}-%{version}-ppc64le-debug.config
 
-# Source70: kernel-%{version}-s390x.config
-# Source71: kernel-%{version}-s390x-debug.config
-# Source72: kernel-%{version}-s390x-kdump.config
+# Source70: %{package_name}-%{version}-s390x.config
+# Source71: %{package_name}-%{version}-s390x-debug.config
+# Source72: %{package_name}-%{version}-s390x-kdump.config
 
-Source80: kernel-%{version}-aarch64.config
-Source81: kernel-%{version}-aarch64-debug.config
+Source80: %{package_name}-%{version}-aarch64.config
+Source81: %{package_name}-%{version}-aarch64-debug.config
 
 # Sources for kernel-pegas-tools
 Source2000: cpupower.service
@@ -437,7 +440,7 @@ Provides: kernel-headers = %{version}-%{release}
 Obsoletes: glibc-kernheaders < 3.0-46
 Provides: glibc-kernheaders = 3.0-46
 %description headers
-kernel-pegas-headers includes the C header files that specify the interface
+%{package_name}-headers includes the C header files that specify the interface
 between the Linux kernel and userspace libraries and programs.  The
 header files define structures and constants that are needed for
 building most standard programs and are also needed for rebuilding the
@@ -449,7 +452,7 @@ Group: Development/System
 Conflicts: kernel-bootwrapper
 Requires: gzip binutils
 %description bootwrapper
-kernel-pegas-bootwrapper contains the wrapper code which makes bootable "zImage"
+%{package_name}-bootwrapper contains the wrapper code which makes bootable "zImage"
 files combining both kernel and initial ramdisk.
 
 %package debuginfo-common-%{_target_cpu}
@@ -513,11 +516,12 @@ This package provides debug information for the perf python bindings.
 
 %if %{with_tools}
 
-%package -n kernel-pegas-tools
+%package -n %{package_name}-tools
 Summary: Assortment of tools for the Linux kernel
 Group: Development/System
 License: GPLv2
 Conflicts: kernel-tools
+Conflicts: %{package_name}-tools
 Provides:  cpupowerutils = 1:009-0.6.p1
 Obsoletes: cpupowerutils < 1:009-0.6.p1
 Provides:  cpufreq-utils = 1:009-0.6.p1
@@ -525,48 +529,51 @@ Provides:  cpufrequtils = 1:009-0.6.p1
 Obsoletes: cpufreq-utils < 1:009-0.6.p1
 Obsoletes: cpufrequtils < 1:009-0.6.p1
 Obsoletes: cpuspeed < 1:2.0
-Requires: kernel-pegas-tools-libs = %{version}-%{release}
-%description -n kernel-pegas-tools
+Requires: %{package_name}-tools-libs = %{version}-%{release}
+%description -n %{package_name}-tools
 This package contains the tools/ directory from the kernel source
 and the supporting documentation.
 
-%package -n kernel-pegas-tools-libs
+%package -n %{package_name}-tools-libs
 Summary: Libraries for the kernels-pegas-tools
 Group: Development/System
 License: GPLv2
 Conflicts: kernel-tools-libs
-%description -n kernel-pegas-tools-libs
+Conflicts: %{package_name}-tools-libs
+%description -n %{package_name}-tools-libs
 This package contains the libraries built from the tools/ directory
 from the kernel source.
 
-%package -n kernel-pegas-tools-libs-devel
+%package -n %{package_name}-tools-libs-devel
 Summary: Assortment of tools for the Linux kernel
 Group: Development/System
 License: GPLv2
 Conflicts: kernel-tools-libs-devel
-Requires: kernel-pegas-tools = %{version}-%{release}
+Conflicts: %{package_name}-tools-libs-devel
+Requires: %{package_name}-tools = %{version}-%{release}
 Provides:  cpupowerutils-devel = 1:009-0.6.p1
 Obsoletes: cpupowerutils-devel < 1:009-0.6.p1
-Requires: kernel-pegas-tools-libs = %{version}-%{release}
-Provides: kernel-pegas-tools-devel
-%description -n kernel-pegas-tools-libs-devel
+Requires: %{package_name}-tools-libs = %{version}-%{release}
+Provides: %{package_name}-tools-devel
+%description -n %{package_name}-tools-libs-devel
 This package contains the development files for the tools/ directory from
 the kernel source.
 
-%package -n kernel-pegas-tools-debuginfo
-Summary: Debug information for package kernel-pegas-tools
+%package -n %{package_name}-tools-debuginfo
+Summary: Debug information for package %{package_name}-tools
 Group: Development/Debug
 Conflicts: kernel-tools-debuginfo
+Conflicts: %{package_name}-tools-debuginfo
 Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
 AutoReqProv: no
-%description -n kernel-pegas-tools-debuginfo
-This package provides debug information for package kernel-pegas-tools.
+%description -n %{package_name}-tools-debuginfo
+This package provides debug information for package %{package_name}-tools.
 
 # Note that this pattern only works right to match the .build-id
 # symlinks because of the trailing nonmatching alternation and
 # the leading .*, because of find-debuginfo.sh's buggy handling
 # of matching the pattern against the symlinks file.
-%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/centrino-decode(\.debug)?|.*%%{_bindir}/powernow-k8-decode(\.debug)?|.*%%{_bindir}/cpupower(\.debug)?|.*%%{_libdir}/libcpupower.*|.*%%{_libdir}/libcpupower.*|.*%%{_bindir}/turbostat(\.debug)?|.*%%{_bindir}/x86_energy_perf_policy(\.debug)?|.*%%{_bindir}/tmon(\.debug)?|XXX' -o kernel-pegas-tools-debuginfo.list}
+%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/centrino-decode(\.debug)?|.*%%{_bindir}/powernow-k8-decode(\.debug)?|.*%%{_bindir}/cpupower(\.debug)?|.*%%{_libdir}/libcpupower.*|.*%%{_libdir}/libcpupower.*|.*%%{_bindir}/turbostat(\.debug)?|.*%%{_bindir}/x86_energy_perf_policy(\.debug)?|.*%%{_bindir}/tmon(\.debug)?|XXX' -o %{package_name}-tools-debuginfo.list}
 
 %endif # with_tools
 
@@ -578,12 +585,12 @@ Group: Development/System
 kernel-gcov includes the gcov graph and source files for gcov coverage collection.
 %endif
 
-%package -n kernel-pegas-abi-whitelists
+%package -n kernel-abi-whitelists
 Summary: The Red Hat Enterprise Linux kernel ABI symbol whitelists
 Group: System Environment/Kernel
 Conflicts: kernel-abi-whitelists
 AutoReqProv: no
-%description -n kernel-pegas-abi-whitelists
+%description -n kernel-abi-whitelists
 The kABI package contains information pertaining to the Red Hat Enterprise
 Linux kernel ABI, including lists of kernel symbols that are needed by
 external Linux kernel modules, and a yum plugin to aid enforcement.
@@ -616,10 +623,12 @@ Group: System Environment/Kernel\
 Provides: kernel%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
 Provides: kernel-devel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
 Provides: kernel-devel-uname-r = %{KVRA}%{?1:.%{1}}\
+Provides: %{package_name}-devel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
+Provides: %{package_name}-devel-uname-r = %{KVRA}%{?1:.%{1}}\
 AutoReqProv: no\
 Requires(pre): /usr/bin/find\
 Requires: perl\
-%description -n kernel-pegas%{?variant}%{?1:-%{1}}-devel\
+%description -n %{package_name}%{?variant}%{?1:-%{1}}-devel\
 This package provides kernel headers and makefiles sufficient to build modules\
 against the %{?2:%{2} }kernel package.\
 %{nil}
@@ -719,12 +728,12 @@ ApplyOptionalPatch()
   fi
 }
 
-%setup -q -n kernel-pegas-%{rheltarball} -c
+%setup -q -n %{package_name}-%{rheltarball} -c
 mv linux-%{rheltarball} linux-%{KVRA}
 cd linux-%{KVRA}
 
 # Drop some necessary files from the source dir into the buildroot
-cp $RPM_SOURCE_DIR/kernel-%{version}-*.config .
+cp $RPM_SOURCE_DIR/%{package_name}-%{version}-*.config .
 
 ApplyOptionalPatch linux-kernel-test.patch
 
@@ -744,14 +753,14 @@ if [ -L configs ]; then
 fi
 
 # Remove configs not for the buildarch
-for cfg in kernel-%{version}-*.config; do
+for cfg in %{package_name}-%{version}-*.config; do
   if [ `echo %{all_arch_configs} | grep -c $cfg` -eq 0 ]; then
     rm -f $cfg
   fi
 done
 
 %if !%{debugbuildsenabled}
-rm -f kernel-%{version}-*debug.config
+rm -f %{package_name}-%{version}-*debug.config
 %endif
 
 # enable GCOV kernel config options if gcov is on
@@ -821,7 +830,7 @@ BuildKernel() {
     InstallName=${4:-vmlinuz}
 
     # Pick the right config file for the kernel we're building
-    Config=kernel-%{version}-%{_target_cpu}${Flavour:+-${Flavour}}.config
+    Config=%{package_name}-%{version}-%{_target_cpu}${Flavour:+-${Flavour}}.config
     DevelDir=/usr/src/kernels/%{KVRA}${Flavour:+.${Flavour}}
 
     # When the bootable image is just the ELF kernel, strip it.
@@ -916,7 +925,7 @@ BuildKernel() {
       echo > ldconfig-kernel.conf "\
 # Placeholder file, no vDSO hwcap entries used in this kernel."
     fi
-    %{__install} -D -m 444 ldconfig-kernel.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/kernel-pegas-$KernelVer.conf
+    %{__install} -D -m 444 ldconfig-kernel.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/%{package_name}-$KernelVer.conf
 %endif
 
     # And save the headers/makefiles etc for building modules against
@@ -1153,7 +1162,7 @@ find Documentation -type d | xargs chmod u+w
 
 %define __modsign_install_post \
   if [ "%{with_debug}" -ne "0" ]; then \
-    Arch=`head -1 configs/kernel-%{version}-%{_target_cpu}-debug.config | cut -b 3-` \
+    Arch=`head -1 configs/%{package_name}-%{version}-%{_target_cpu}-debug.config | cut -b 3-` \
     rm -rf .tmp_versions \
     mv .tmp_versions.sign.debug .tmp_versions \
     mv signing_key.pem.sign.debug signing_key.pem \
@@ -1161,7 +1170,7 @@ find Documentation -type d | xargs chmod u+w
     %{modsign_cmd} $RPM_BUILD_ROOT/lib/modules/%{KVRA}.debug || exit 1 \
   fi \
     if [ "%{with_default}" -ne "0" ]; then \
-    Arch=`head -1 configs/kernel-%{version}-%{_target_cpu}.config | cut -b 3-` \
+    Arch=`head -1 configs/%{package_name}-%{version}-%{_target_cpu}.config | cut -b 3-` \
     rm -rf .tmp_versions \
     mv .tmp_versions.sign .tmp_versions \
     mv signing_key.pem.sign signing_key.pem \
@@ -1321,10 +1330,10 @@ rm -rf $RPM_BUILD_ROOT
 ###
 
 %if %{with_tools}
-%post -n kernel-pegas-tools
+%post -n %{package_name}-tools
 /sbin/ldconfig
 
-%postun -n kernel-pegas-tools
+%postun -n %{package_name}-tools
 /sbin/ldconfig
 %endif
 
@@ -1358,8 +1367,8 @@ if [ -x %{_sbindir}/weak-modules ]\
 then\
     %{_sbindir}/weak-modules --add-kernel %{KVRA}%{?1:.%{1}} || exit $?\
 fi\
-%{_sbindir}/new-kernel-pkg --package kernel-pegas%{?-v:-%{-v*}} --mkinitrd --dracut --depmod --update %{KVRA}%{?-v:.%{-v*}} || exit $?\
-%{_sbindir}/new-kernel-pkg --package kernel-pegas%{?1:-%{1}} --rpmposttrans %{KVRA}%{?1:.%{1}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package %{package_name}%{?-v:-%{-v*}} --mkinitrd --dracut --depmod --update %{KVRA}%{?-v:.%{-v*}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package %{package_name}%{?1:-%{1}} --rpmposttrans %{KVRA}%{?1:.%{1}} || exit $?\
 %{nil}
 
 #
@@ -1377,7 +1386,7 @@ if [ `uname -i` == "x86_64" ] &&\
   /bin/sed -r -i -e 's/^DEFAULTKERNEL=%{-r*}$/DEFAULTKERNEL=kernel%{?-v:-%{-v*}}/' /etc/sysconfig/kernel || exit $?\
 fi}\
 %{expand:\
-%{_sbindir}/new-kernel-pkg --package kernel-pegas%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package %{package_name}%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
 }\
 %{nil}
 
@@ -1455,7 +1464,7 @@ fi
 %endif
 
 %if %{with_kernel_abi_whitelists}
-%files -n kernel-pegas-abi-whitelists
+%files -n kernel-abi-whitelists
 %defattr(-,root,root,-)
 /lib/modules/kabi-*
 %endif
@@ -1486,7 +1495,7 @@ fi
 %endif
 
 %if %{with_tools}
-%files -n kernel-pegas-tools -f cpupower.lang
+%files -n %{package_name}-tools -f cpupower.lang
 %defattr(-,root,root)
 %ifarch %{cpupowerarchs}
 %{_bindir}/cpupower
@@ -1506,17 +1515,17 @@ fi
 %endif
 %{_bindir}/tmon
 %if %{with_debuginfo}
-%files -f kernel-pegas-tools-debuginfo.list -n kernel-pegas-tools-debuginfo
+%files -f %{package_name}-tools-debuginfo.list -n %{package_name}-tools-debuginfo
 %defattr(-,root,root)
 %endif
 
 %ifarch %{cpupowerarchs}
-%files -n kernel-pegas-tools-libs
+%files -n %{package_name}-tools-libs
 %defattr(-,root,root)
 %{_libdir}/libcpupower.so.0
 %{_libdir}/libcpupower.so.0.0.1
 
-%files -n kernel-pegas-tools-libs-devel
+%files -n %{package_name}-tools-libs-devel
 %defattr(-,root,root)
 %{_libdir}/libcpupower.so
 %{_includedir}/cpufreq.h
@@ -1559,7 +1568,7 @@ fi
 /lib/modules/%{KVRA}%{?2:.%{2}}/weak-updates\
 %ifarch %{vdso_arches}\
 /lib/modules/%{KVRA}%{?2:.%{2}}/vdso\
-/etc/ld.so.conf.d/kernel-pegas-%{KVRA}%{?2:.%{2}}.conf\
+/etc/ld.so.conf.d/%{package_name}-%{KVRA}%{?2:.%{2}}.conf\
 %endif\
 /lib/modules/%{KVRA}%{?2:.%{2}}/modules.*\
 %ghost /boot/initramfs-%{KVRA}%{?2:.%{2}}.img\
