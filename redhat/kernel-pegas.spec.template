@@ -215,13 +215,9 @@ Summary: The Linux kernel
 # printed out?
 %define listnewconfig_fail 1
 
-# To temporarily exclude an architecture from being built, add it to
-# %%nobuildarches. Do _NOT_ use the ExclusiveArch: line, because if we
-# don't build kernel-headers then the new build system will no longer let
-# us use the previous build of that package -- it'll just be completely AWOL.
-# Which is a BadThing(tm).
-
-# We only build kernel-headers on the following...
+# We only build kernel-headers on the following, for being able to do builds
+# with a different bit length (eg. 32-bit build on a 64-bit environment). Do not
+# remove them from ExclusiveArch tag below
 %define nobuildarches i686 ppc
 
 %ifarch %nobuildarches
@@ -306,8 +302,12 @@ License: GPLv2
 URL: http://www.kernel.org/
 Version: %{rpmversion}
 Release: %{pkg_release}
-# DO NOT CHANGE THE 'ExclusiveArch' LINE TO TEMPORARILY EXCLUDE AN ARCHITECTURE BUILD.
-# SET %%nobuildarches (ABOVE) INSTEAD
+# Some architectures need a different headers version for user space builds with
+# a different bit length environment (eg. 32-bit user space build on 64-bit).
+# For architectures we support, where we must provide a compatible kernel-headers
+# package, don't exclude them in ExclusiveArch below, but add them to
+# %%nobuildarches (above) instead. Example: if we support x86_64, we must build
+# the i686 (32-bit) headers and provide a package with them
 ExclusiveArch: aarch64 i686 noarch ppc ppc64le x86_64
 ExclusiveOS: Linux
 
