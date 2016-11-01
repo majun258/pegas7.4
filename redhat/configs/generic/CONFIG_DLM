@@ -1,1 +1,1 @@
-CONFIG_DLM=m
+# CONFIG_DLM is not set

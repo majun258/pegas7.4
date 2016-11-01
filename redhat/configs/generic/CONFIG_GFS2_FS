@@ -1,1 +1,1 @@
-CONFIG_GFS2_FS=m
+# CONFIG_GFS2_FS is not set
