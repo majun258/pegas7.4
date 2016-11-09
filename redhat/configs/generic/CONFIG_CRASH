@@ -1,1 +1,1 @@
-# CONFIG_CRASH is not set
+CONFIG_CRASH=m
