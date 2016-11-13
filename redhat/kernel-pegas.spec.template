@@ -1,7 +1,9 @@
 # We have to override the new %%install behavior because, well... the kernel is special.
 %global __spec_install_pre %{___build_pre}
 
-%global package_name kernel-pegas
+%global src_pkg_name %%PACKAGE_NAME%%
+%global bin_pkg_name kernel
+%global bin_suffix_name %{nil}
 
 Summary: The Linux kernel
 
@@ -125,7 +127,7 @@ Summary: The Linux kernel
 
 # Overrides for generic default options
 
-# only build kernel-debug on x86_64, ppc64le, arm64
+# only build debug kernel on architectures below
 %ifnarch x86_64 ppc64le aarch64
 %define with_debug 0
 %endif
@@ -145,10 +147,10 @@ Summary: The Linux kernel
 %define with_headers 0
 %define with_tools 0
 %define with_perf 0
-%define all_arch_configs %{package_name}-%{version}-*.config
+%define all_arch_configs %{src_pkg_name}-%{version}-*.config
 %endif
 
-# sparse blows up on ppc64
+# sparse blows up on ppc*
 %ifarch ppc64 ppc64le ppc
 %define with_sparse 0
 %endif
@@ -158,7 +160,7 @@ Summary: The Linux kernel
 %ifarch aarch64
 %define asmarch arm64
 %define hdrarch arm64
-%define all_arch_configs %{package_name}-%{version}-aarch64*.config
+%define all_arch_configs %{src_pkg_name}-%{version}-aarch64*.config
 %define make_target Image.gz
 %define kernel_image arch/arm64/boot/Image.gz
 %define image_install_path boot
@@ -171,7 +173,7 @@ Summary: The Linux kernel
 
 %ifarch x86_64
 %define asmarch x86
-%define all_arch_configs %{package_name}-%{version}-x86_64*.config
+%define all_arch_configs %{src_pkg_name}-%{version}-x86_64*.config
 %define image_install_path boot
 %define kernel_image arch/x86/boot/bzImage
 %endif
@@ -184,7 +186,7 @@ Summary: The Linux kernel
 %ifarch ppc64 ppc64le
 %define asmarch powerpc
 %define hdrarch powerpc
-%define all_arch_configs %{package_name}-%{version}-ppc64*.config
+%define all_arch_configs %{src_pkg_name}-%{version}-ppc64*.config
 %define image_install_path boot
 %define make_target vmlinux
 %define kernel_image vmlinux
@@ -197,7 +199,7 @@ Summary: The Linux kernel
 %ifarch s390x
 %define asmarch s390
 %define hdrarch s390
-%define all_arch_configs %{package_name}-%{version}-s390x*.config
+%define all_arch_configs %{src_pkg_name}-%{version}-s390x*.config
 %define image_install_path boot
 %define kernel_image arch/s390/boot/bzImage
 %define with_tools 0
@@ -215,9 +217,9 @@ Summary: The Linux kernel
 # printed out?
 %define listnewconfig_fail 1
 
-# We only build kernel-headers on the following, for being able to do builds
-# with a different bit length (eg. 32-bit build on a 64-bit environment). Do not
-# remove them from ExclusiveArch tag below
+# We only build kernel headers package on the following, for being able to do
+# builds with a different bit length (eg. 32-bit build on a 64-bit environment).
+# Do not remove them from ExclusiveArch tag below
 %define nobuildarches i686 ppc
 
 %ifarch %nobuildarches
@@ -253,7 +255,7 @@ Summary: The Linux kernel
 #
 %define package_conflicts initscripts < 7.23, udev < 063-6, iptables < 1.3.2-1, ipw2200-firmware < 2.4, iwl4965-firmware < 228.57.2, selinux-policy-targeted < 1.25.3-14, squashfs-tools < 4.0, wireless-tools < 29-3, xfsprogs < 4.3.0, kmod < 20-9
 
-# We moved the drm include files into kernel-headers, make sure there's
+# We moved the drm include files into kernel headers, make sure there's
 # a recent enough libdrm-devel on the system that doesn't have those.
 %define kernel_headers_conflicts libdrm-devel < 2.4.0-0.15
 
@@ -273,7 +275,6 @@ Summary: The Linux kernel
 %define kernel_reqprovconf \
 Provides: kernel = %{rpmversion}-%{pkg_release}\
 Provides: kernel-%{_target_cpu} = %{rpmversion}-%{pkg_release}%{?1:.%{1}}\
-Provides: %{package_name}-%{_target_cpu} = %{rpmversion}-%{pkg_release}%{?1:.%{1}}\
 Provides: kernel-drm = 4.3.0\
 Provides: kernel-drm-nouveau = 16\
 Provides: kernel-modeset = 1\
@@ -296,7 +297,7 @@ AutoReq: no\
 AutoProv: yes\
 %{nil}
 
-Name: %{package_name}%{?variant}
+Name: %{src_pkg_name}
 Group: System Environment/Kernel
 License: GPLv2
 URL: http://www.kernel.org/
@@ -310,8 +311,6 @@ Release: %{pkg_release}
 # the i686 (32-bit) headers and provide a package with them
 ExclusiveArch: aarch64 i686 noarch ppc ppc64le x86_64
 ExclusiveOS: Linux
-
-%kernel_reqprovconf
 
 #
 # List the packages used during the kernel build
@@ -384,44 +383,55 @@ Source23: Module.kabi_s390x
 Source25: kernel-abi-whitelists-%{distro_build}.tar.bz2
 %endif
 
-Source50: %{package_name}-%{version}-x86_64.config
-Source51: %{package_name}-%{version}-x86_64-debug.config
+Source50: %{src_pkg_name}-%{version}-x86_64.config
+Source51: %{src_pkg_name}-%{version}-x86_64-debug.config
 
-# Source60: %{package_name}-%{version}-ppc64.config
-# Source61: %{package_name}-%{version}-ppc64-debug.config
-Source62: %{package_name}-%{version}-ppc64le.config
-Source63: %{package_name}-%{version}-ppc64le-debug.config
+# Source60: %{src_pkg_name}-%{version}-ppc64.config
+# Source61: %{src_pkg_name}-%{version}-ppc64-debug.config
+Source62: %{src_pkg_name}-%{version}-ppc64le.config
+Source63: %{src_pkg_name}-%{version}-ppc64le-debug.config
 
-# Source70: %{package_name}-%{version}-s390x.config
-# Source71: %{package_name}-%{version}-s390x-debug.config
-# Source72: %{package_name}-%{version}-s390x-kdump.config
+# Source70: %{src_pkg_name}-%{version}-s390x.config
+# Source71: %{src_pkg_name}-%{version}-s390x-debug.config
+# Source72: %{src_pkg_name}-%{version}-s390x-kdump.config
 
-Source80: %{package_name}-%{version}-aarch64.config
-Source81: %{package_name}-%{version}-aarch64-debug.config
+Source80: %{src_pkg_name}-%{version}-aarch64.config
+Source81: %{src_pkg_name}-%{version}-aarch64-debug.config
 
-# Sources for kernel-pegas-tools
+# Sources for kernel tools
 Source2000: cpupower.service
 Source2001: cpupower.config
 
 # empty final patch to facilitate testing of kernel patches
 Patch999999: linux-kernel-test.patch
 
-BuildRoot: %{_tmppath}/kernel-%{KVRA}-root
+BuildRoot: %{_tmppath}/%{src_pkg_name}-%{KVRA}-root
 
 %description
-The kernel package contains the Linux kernel (vmlinuz), the core of any
-Linux operating system.  The kernel handles the basic functions
-of the operating system: memory allocation, process allocation, device
+The %{src_pkg_name} package contains the Linux kernel sources. The Linux kernel
+is the core of any Linux operating system.  The kernel handles the basic
+functions of the operating system: memory allocation, process allocation, device
 input and output, etc.
 
 %%EXTRA_DESC%%
 
-%package doc
+%package -n %{bin_pkg_name}
+Summary: The Linux kernel
+Group: System Environment/Kernel
+%kernel_reqprovconf
+
+%description -n %{bin_pkg_name}
+The %{bin_pkg_name} package contains the Linux kernel (vmlinuz), the core of any
+Linux operating system.  The kernel handles the basic functions of the operating
+system: memory allocation, process allocation, device input and output, etc.
+
+%%EXTRA_DESC%%
+
+%package -n %{bin_pkg_name}-doc
 Summary: Various documentation bits found in the kernel source
 Group: Documentation
-Conflicts: kernel-doc
 AutoReqProv: no
-%description doc
+%description -n %{bin_pkg_name}-doc
 This package contains documentation files from the kernel
 source. Various bits of information about the Linux kernel and the
 device drivers shipped with it are documented in these files.
@@ -430,98 +440,86 @@ You'll want to install this package if you need a reference to the
 options that can be passed to Linux kernel modules at load time.
 
 
-%package headers
+%package -n %{bin_pkg_name}-headers
 Summary: Header files for the Linux kernel for use by glibc
 Group: Development/System
-# 3.11 is not a real release, but make sure we conflict with all
-# RHEL 7 kernel-headers versions...
-Conflicts: kernel-headers < 3.11
-Provides: kernel-headers = %{version}-%{release}
 Obsoletes: glibc-kernheaders < 3.0-46
 Provides: glibc-kernheaders = 3.0-46
-%description headers
-%{package_name}-headers includes the C header files that specify the interface
+%description -n %{bin_pkg_name}-headers
+%{bin_pkg_name}-headers includes the C header files that specify the interface
 between the Linux kernel and userspace libraries and programs.  The
 header files define structures and constants that are needed for
 building most standard programs and are also needed for rebuilding the
 glibc package.
 
-%package bootwrapper
+%package -n %{bin_pkg_name}-bootwrapper
 Summary: Boot wrapper files for generating combined kernel + initrd images
 Group: Development/System
-Conflicts: kernel-bootwrapper
 Requires: gzip binutils
-%description bootwrapper
-%{package_name}-bootwrapper contains the wrapper code which makes bootable "zImage"
+%description -n %{bin_pkg_name}-bootwrapper
+%{bin_pkg_name}-bootwrapper contains the wrapper code which makes bootable "zImage"
 files combining both kernel and initial ramdisk.
 
-%package debuginfo-common-%{_target_cpu}
-Summary: Kernel source files used by %{name}-debuginfo packages
+%package -n %{bin_pkg_name}-debuginfo-common-%{_target_cpu}
+Summary: Kernel source files used by %{bin_pkg_name}-debuginfo packages
 Group: Development/Debug
-Conflicts: kernel-debuginfo-common-%{_target_cpu}
-%description debuginfo-common-%{_target_cpu}
-This package is required by %{name}-debuginfo subpackages.
+%description -n %{bin_pkg_name}-debuginfo-common-%{_target_cpu}
+This package is required by %{bin_pkg_name}-debuginfo subpackages.
 It provides the kernel source files common to all builds.
 
 %if %{with_perf}
-%package -n perf-pegas
+%package -n perf%{?bin_suffix:-%{bin_suffix}}
 Summary: Performance monitoring for the Linux kernel
 Group: Development/System
 License: GPLv2
-Conflicts: perf
-%description -n perf-pegas
+%description -n perf%{?bin_suffix:-%{bin_suffix}}
 This package contains the perf tool, which enables performance monitoring
 of the Linux kernel.
 
-%package -n perf-pegas-debuginfo
+%package -n perf%{?bin_suffix:-%{bin_suffix}}-debuginfo
 Summary: Debug information for package perf
 Group: Development/Debug
-Conflicts: perf-debuginfo
-Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
+Requires: %{bin_pkg_name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
 AutoReqProv: no
-%description -n perf-pegas-debuginfo
+%description -n perf%{?bin_suffix:-%{bin_suffix}}-debuginfo
 This package provides debug information for the perf package.
 
 # Note that this pattern only works right to match the .build-id
 # symlinks because of the trailing nonmatching alternation and
 # the leading .*, because of find-debuginfo.sh's buggy handling
 # of matching the pattern against the symlinks file.
-%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/perf(\.debug)?|.*%%{_libexecdir}/perf-core/.*|XXX' -o perf-pegas-debuginfo.list}
+%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/perf(\.debug)?|.*%%{_libexecdir}/perf-core/.*|XXX' -o perf-debuginfo.list}
 
-%package -n python-perf-pegas
+%package -n python-perf%{?bin_suffix:-%{bin_suffix}}
 Summary: Python bindings for apps which will manipulate perf events
 Group: Development/Libraries
-Conflicts: python-perf
-%description -n python-perf-pegas
-The python-perf-pegas package contains a module that permits applications
+%description -n python-perf%{?bin_suffix:-%{bin_suffix}}
+The python-perf%{?bin_suffix:-%{bin_suffix}} package contains a module that permits applications
 written in the Python programming language to use the interface
 to manipulate perf events.
 
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
 
-%package -n python-perf-pegas-debuginfo
+%package -n python-perf%{?bin_suffix:-%{bin_suffix}}-debuginfo
 Summary: Debug information for package perf python bindings
 Group: Development/Debug
-Conflicts: python-perf-debuginfo
-Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
+Requires: %{bin_pkg_name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
 AutoReqProv: no
-%description -n python-perf-pegas-debuginfo
+%description -n python-perf%{?bin_suffix:-%{bin_suffix}}-debuginfo
 This package provides debug information for the perf python bindings.
 
 # the python_sitearch macro should already be defined from above
-%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{python_sitearch}/perf.so(\.debug)?|XXX' -o python-perf-pegas-debuginfo.list}
+%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{python_sitearch}/perf.so(\.debug)?|XXX' -o python-perf-debuginfo.list}
 
 
 %endif # with_perf
 
 %if %{with_tools}
 
-%package -n %{package_name}-tools
+%package -n %{bin_pkg_name}-tools
 Summary: Assortment of tools for the Linux kernel
 Group: Development/System
 License: GPLv2
-Conflicts: kernel-tools
-Conflicts: %{package_name}-tools
 Provides:  cpupowerutils = 1:009-0.6.p1
 Obsoletes: cpupowerutils < 1:009-0.6.p1
 Provides:  cpufreq-utils = 1:009-0.6.p1
@@ -529,68 +527,60 @@ Provides:  cpufrequtils = 1:009-0.6.p1
 Obsoletes: cpufreq-utils < 1:009-0.6.p1
 Obsoletes: cpufrequtils < 1:009-0.6.p1
 Obsoletes: cpuspeed < 1:2.0
-Requires: %{package_name}-tools-libs = %{version}-%{release}
-%description -n %{package_name}-tools
+Requires: %{bin_pkg_name}-tools-libs = %{version}-%{release}
+%description -n %{bin_pkg_name}-tools
 This package contains the tools/ directory from the kernel source
 and the supporting documentation.
 
-%package -n %{package_name}-tools-libs
-Summary: Libraries for the kernels-pegas-tools
+%package -n %{bin_pkg_name}-tools-libs
+Summary: Libraries for the %{bin_pkg_name}-tools
 Group: Development/System
 License: GPLv2
-Conflicts: kernel-tools-libs
-Conflicts: %{package_name}-tools-libs
-%description -n %{package_name}-tools-libs
+%description -n %{bin_pkg_name}-tools-libs
 This package contains the libraries built from the tools/ directory
 from the kernel source.
 
-%package -n %{package_name}-tools-libs-devel
+%package -n %{bin_pkg_name}-tools-libs-devel
 Summary: Assortment of tools for the Linux kernel
 Group: Development/System
 License: GPLv2
-Conflicts: kernel-tools-libs-devel
-Conflicts: %{package_name}-tools-libs-devel
-Requires: %{package_name}-tools = %{version}-%{release}
+Requires: %{bin_pkg_name}-tools = %{version}-%{release}
 Provides:  cpupowerutils-devel = 1:009-0.6.p1
 Obsoletes: cpupowerutils-devel < 1:009-0.6.p1
-Requires: %{package_name}-tools-libs = %{version}-%{release}
-Provides: %{package_name}-tools-devel
-%description -n %{package_name}-tools-libs-devel
+Requires: %{bin_pkg_name}-tools-libs = %{version}-%{release}
+%description -n %{bin_pkg_name}-tools-libs-devel
 This package contains the development files for the tools/ directory from
 the kernel source.
 
-%package -n %{package_name}-tools-debuginfo
-Summary: Debug information for package %{package_name}-tools
+%package -n %{bin_pkg_name}-tools-debuginfo
+Summary: Debug information for package %{bin_pkg_name}-tools
 Group: Development/Debug
-Conflicts: kernel-tools-debuginfo
-Conflicts: %{package_name}-tools-debuginfo
-Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
+Requires: %{bin_pkg_name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
 AutoReqProv: no
-%description -n %{package_name}-tools-debuginfo
-This package provides debug information for package %{package_name}-tools.
+%description -n %{bin_pkg_name}-tools-debuginfo
+This package provides debug information for package %{bin_pkg_name}-tools.
 
 # Note that this pattern only works right to match the .build-id
 # symlinks because of the trailing nonmatching alternation and
 # the leading .*, because of find-debuginfo.sh's buggy handling
 # of matching the pattern against the symlinks file.
-%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/centrino-decode(\.debug)?|.*%%{_bindir}/powernow-k8-decode(\.debug)?|.*%%{_bindir}/cpupower(\.debug)?|.*%%{_libdir}/libcpupower.*|.*%%{_libdir}/libcpupower.*|.*%%{_bindir}/turbostat(\.debug)?|.*%%{_bindir}/x86_energy_perf_policy(\.debug)?|.*%%{_bindir}/tmon(\.debug)?|XXX' -o %{package_name}-tools-debuginfo.list}
+%{expand:%%global debuginfo_args %{?debuginfo_args} -p '.*%%{_bindir}/centrino-decode(\.debug)?|.*%%{_bindir}/powernow-k8-decode(\.debug)?|.*%%{_bindir}/cpupower(\.debug)?|.*%%{_libdir}/libcpupower.*|.*%%{_libdir}/libcpupower.*|.*%%{_bindir}/turbostat(\.debug)?|.*%%{_bindir}/x86_energy_perf_policy(\.debug)?|.*%%{_bindir}/tmon(\.debug)?|XXX' -o tools-debuginfo.list}
 
 %endif # with_tools
 
 %if %{with_gcov}
-%package gcov
+%package -n %{bin_pkg_name}-gcov
 Summary: gcov graph and source files for coverage data collection.
 Group: Development/System
-%description gcov
+%description -n %{bin_pkg_name}-gcov
 kernel-gcov includes the gcov graph and source files for gcov coverage collection.
 %endif
 
-%package -n kernel-abi-whitelists
+%package -n %{bin_pkg_name}-abi-whitelists
 Summary: The Red Hat Enterprise Linux kernel ABI symbol whitelists
 Group: System Environment/Kernel
-Conflicts: kernel-abi-whitelists
 AutoReqProv: no
-%description -n kernel-abi-whitelists
+%description -n %{bin_pkg_name}-abi-whitelists
 The kABI package contains information pertaining to the Red Hat Enterprise
 Linux kernel ABI, including lists of kernel symbols that are needed by
 external Linux kernel modules, and a yum plugin to aid enforcement.
@@ -600,15 +590,15 @@ external Linux kernel modules, and a yum plugin to aid enforcement.
 #	%%kernel_debuginfo_package <subpackage>
 #
 %define kernel_debuginfo_package() \
-%package %{?1:%{1}-}debuginfo\
-Summary: Debug information for package %{name}%{?1:-%{1}}\
+%package -n %{bin_pkg_name}-%{?1:%{1}-}debuginfo\
+Summary: Debug information for package %{bin_pkg_name}%{?1:-%{1}}\
 Group: Development/Debug\
-Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}\
-Provides: %{name}%{?1:-%{1}}-debuginfo-%{_target_cpu} = %{version}-%{release}\
+Requires: %{bin_pkg_name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}\
+Provides: %{bin_pkg_name}-%{?1:%{1}-}debuginfo-%{_target_cpu} = %{version}-%{release}\
 AutoReqProv: no\
-%description -n %{name}%{?1:-%{1}}-debuginfo\
-This package provides debug information for package %{name}%{?1:-%{1}}.\
-This is required to use SystemTap with %{name}%{?1:-%{1}}-%{KVRA}.\
+%description -n %{bin_pkg_name}-%{?1:%{1}-}debuginfo\
+This package provides debug information for package %{bin_pkg_name}%{?1:-%{1}}.\
+This is required to use SystemTap with %{bin_pkg_name}%{?1:-%{1}}-%{KVRA}.\
 %{expand:%%global debuginfo_args %{?debuginfo_args} -p '/.*/%%{KVRA}%{?1:\.%{1}}/.*|/.*%%{KVRA}%{?1:\.%{1}}(\.debug)?' -o debuginfo%{?1}.list}\
 %{nil}
 
@@ -617,18 +607,16 @@ This is required to use SystemTap with %{name}%{?1:-%{1}}-%{KVRA}.\
 #	%%kernel_devel_package <subpackage> <pretty-name>
 #
 %define kernel_devel_package() \
-%package %{?1:%{1}-}devel\
+%package -n %{bin_pkg_name}-%{?1:%{1}-}devel\
 Summary: Development package for building kernel modules to match the %{?2:%{2} }kernel\
 Group: System Environment/Kernel\
-Provides: kernel%{?1:-%{1}}-devel-%{_target_cpu} = %{version}-%{release}\
+Provides: %{bin_pkg_name}-%{?1:%{1}-}devel-%{_target_cpu} = %{version}-%{release}\
 Provides: kernel-devel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
 Provides: kernel-devel-uname-r = %{KVRA}%{?1:.%{1}}\
-Provides: %{package_name}-devel-%{_target_cpu} = %{version}-%{release}%{?1:.%{1}}\
-Provides: %{package_name}-devel-uname-r = %{KVRA}%{?1:.%{1}}\
 AutoReqProv: no\
 Requires(pre): /usr/bin/find\
 Requires: perl\
-%description -n %{package_name}%{?variant}%{?1:-%{1}}-devel\
+%description -n %{bin_pkg_name}-%{?1:%{1}-}devel\
 This package provides kernel headers and makefiles sufficient to build modules\
 against the %{?2:%{2} }kernel package.\
 %{nil}
@@ -639,7 +627,7 @@ against the %{?2:%{2} }kernel package.\
 #	%%kernel_variant_package [-n <pretty-name>] <subpackage>
 #
 %define kernel_variant_package(n:) \
-%package %1\
+%package -n %{bin_pkg_name}-%1\
 Summary: %{variant_summary}\
 Group: System Environment/Kernel\
 %kernel_reqprovconf\
@@ -657,7 +645,7 @@ Group: System Environment/Kernel\
 
 %define variant_summary The Linux kernel compiled with extra debugging enabled
 %kernel_variant_package debug
-%description debug
+%description -n %{bin_pkg_name}-debug
 The kernel package contains the Linux kernel (vmlinuz), the core of any
 Linux operating system.  The kernel handles the basic functions
 of the operating system:  memory allocation, process allocation, device
@@ -669,7 +657,7 @@ on kernel bugs, as some of these options impact performance noticably.
 
 %define variant_summary A minimal Linux kernel compiled for crash dumps
 %kernel_variant_package kdump
-%description kdump
+%description -n %{bin_pkg_name}-kdump
 This package includes a kdump version of the Linux kernel. It is
 required only on machines which will use the kexec-based kernel crash dump
 mechanism.
@@ -701,7 +689,7 @@ ApplyPatch()
   if [ ! -f $RPM_SOURCE_DIR/$patch ]; then
     exit 1
   fi
-  if ! grep -E "^Patch[0-9]+: $patch\$" %{_specdir}/${RPM_PACKAGE_NAME%%%%%{?variant}}.spec ; then
+  if ! grep -E "^Patch[0-9]+: $patch\$" %{_specdir}/${RPM_PACKAGE_NAME}.spec ; then
     if [ "${patch:0:8}" != "patch-3." ] ; then
       echo "ERROR: Patch  $patch  not listed as a source patch in specfile"
       exit 1
@@ -728,12 +716,12 @@ ApplyOptionalPatch()
   fi
 }
 
-%setup -q -n %{package_name}-%{rheltarball} -c
+%setup -q -n %{src_pkg_name}-%{rheltarball} -c
 mv linux-%{rheltarball} linux-%{KVRA}
 cd linux-%{KVRA}
 
 # Drop some necessary files from the source dir into the buildroot
-cp $RPM_SOURCE_DIR/%{package_name}-%{version}-*.config .
+cp $RPM_SOURCE_DIR/%{src_pkg_name}-%{version}-*.config .
 
 ApplyOptionalPatch linux-kernel-test.patch
 
@@ -753,14 +741,14 @@ if [ -L configs ]; then
 fi
 
 # Remove configs not for the buildarch
-for cfg in %{package_name}-%{version}-*.config; do
+for cfg in %{src_pkg_name}-%{version}-*.config; do
   if [ `echo %{all_arch_configs} | grep -c $cfg` -eq 0 ]; then
     rm -f $cfg
   fi
 done
 
 %if !%{debugbuildsenabled}
-rm -f %{package_name}-%{version}-*debug.config
+rm -f %{src_pkg_name}-%{version}-*debug.config
 %endif
 
 # enable GCOV kernel config options if gcov is on
@@ -830,7 +818,7 @@ BuildKernel() {
     InstallName=${4:-vmlinuz}
 
     # Pick the right config file for the kernel we're building
-    Config=%{package_name}-%{version}-%{_target_cpu}${Flavour:+-${Flavour}}.config
+    Config=%{src_pkg_name}-%{version}-%{_target_cpu}${Flavour:+-${Flavour}}.config
     DevelDir=/usr/src/kernels/%{KVRA}${Flavour:+.${Flavour}}
 
     # When the bootable image is just the ELF kernel, strip it.
@@ -925,7 +913,7 @@ BuildKernel() {
       echo > ldconfig-kernel.conf "\
 # Placeholder file, no vDSO hwcap entries used in this kernel."
     fi
-    %{__install} -D -m 444 ldconfig-kernel.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/%{package_name}-$KernelVer.conf
+    %{__install} -D -m 444 ldconfig-kernel.conf $RPM_BUILD_ROOT/etc/ld.so.conf.d/%{bin_pkg_name}-$KernelVer.conf
 %endif
 
     # And save the headers/makefiles etc for building modules against
@@ -1162,7 +1150,7 @@ find Documentation -type d | xargs chmod u+w
 
 %define __modsign_install_post \
   if [ "%{with_debug}" -ne "0" ]; then \
-    Arch=`head -1 configs/%{package_name}-%{version}-%{_target_cpu}-debug.config | cut -b 3-` \
+    Arch=`head -1 configs/%{src_pkg_name}-%{version}-%{_target_cpu}-debug.config | cut -b 3-` \
     rm -rf .tmp_versions \
     mv .tmp_versions.sign.debug .tmp_versions \
     mv signing_key.pem.sign.debug signing_key.pem \
@@ -1170,7 +1158,7 @@ find Documentation -type d | xargs chmod u+w
     %{modsign_cmd} $RPM_BUILD_ROOT/lib/modules/%{KVRA}.debug || exit 1 \
   fi \
     if [ "%{with_default}" -ne "0" ]; then \
-    Arch=`head -1 configs/%{package_name}-%{version}-%{_target_cpu}.config | cut -b 3-` \
+    Arch=`head -1 configs/%{src_pkg_name}-%{version}-%{_target_cpu}.config | cut -b 3-` \
     rm -rf .tmp_versions \
     mv .tmp_versions.sign .tmp_versions \
     mv signing_key.pem.sign signing_key.pem \
@@ -1194,7 +1182,7 @@ find Documentation -type d | xargs chmod u+w
 
 %ifnarch noarch
 %global __debug_package 1
-%files -f debugfiles.list debuginfo-common-%{_target_cpu}
+%files -f debugfiles.list -n %{bin_pkg_name}-debuginfo-common-%{_target_cpu}
 %defattr(-,root,root)
 %endif
 
@@ -1330,10 +1318,10 @@ rm -rf $RPM_BUILD_ROOT
 ###
 
 %if %{with_tools}
-%post -n %{package_name}-tools
+%post -n %{bin_pkg_name}-tools
 /sbin/ldconfig
 
-%postun -n %{package_name}-tools
+%postun -n %{bin_pkg_name}-tools
 /sbin/ldconfig
 %endif
 
@@ -1342,7 +1330,7 @@ rm -rf $RPM_BUILD_ROOT
 #	%%kernel_devel_post [<subpackage>]
 #
 %define kernel_devel_post() \
-%{expand:%%post %{?1:%{1}-}devel}\
+%{expand:%%post -n %{bin_pkg_name}-%{?1:%{1}-}devel}\
 if [ -f /etc/sysconfig/kernel ]\
 then\
     . /etc/sysconfig/kernel || exit $?\
@@ -1362,13 +1350,13 @@ fi\
 # More text can follow to go at the end of this variant's %%post.
 #
 %define kernel_variant_posttrans() \
-%{expand:%%posttrans %{?1}}\
+%{expand:%%posttrans -n %{bin_pkg_name}%{?1:-%{1}}}\
 if [ -x %{_sbindir}/weak-modules ]\
 then\
     %{_sbindir}/weak-modules --add-kernel %{KVRA}%{?1:.%{1}} || exit $?\
 fi\
-%{_sbindir}/new-kernel-pkg --package %{package_name}%{?-v:-%{-v*}} --mkinitrd --dracut --depmod --update %{KVRA}%{?-v:.%{-v*}} || exit $?\
-%{_sbindir}/new-kernel-pkg --package %{package_name}%{?1:-%{1}} --rpmposttrans %{KVRA}%{?1:.%{1}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package %{bin_pkg_name}%{?-v:-%{-v*}} --mkinitrd --dracut --depmod --update %{KVRA}%{?-v:.%{-v*}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package %{bin_pkg_name}%{?1:-%{1}} --rpmposttrans %{KVRA}%{?1:.%{1}} || exit $?\
 %{nil}
 
 #
@@ -1379,14 +1367,14 @@ fi\
 %define kernel_variant_post(v:r:) \
 %{expand:%%kernel_devel_post %{?-v*}}\
 %{expand:%%kernel_variant_posttrans %{?-v*}}\
-%{expand:%%post %{?-v*}}\
+%{expand:%%post -n %{bin_pkg_name}%{?-v:-%{-v*}}}\
 %{-r:\
 if [ `uname -i` == "x86_64" ] &&\
    [ -f /etc/sysconfig/kernel ]; then\
   /bin/sed -r -i -e 's/^DEFAULTKERNEL=%{-r*}$/DEFAULTKERNEL=kernel%{?-v:-%{-v*}}/' /etc/sysconfig/kernel || exit $?\
 fi}\
 %{expand:\
-%{_sbindir}/new-kernel-pkg --package %{package_name}%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
+%{_sbindir}/new-kernel-pkg --package %{bin_pkg_name}%{?-v:-%{-v*}} --install %{KVRA}%{?-v:.%{-v*}} || exit $?\
 }\
 %{nil}
 
@@ -1395,7 +1383,7 @@ fi}\
 #	%%kernel_variant_preun <subpackage>
 #
 %define kernel_variant_preun() \
-%{expand:%%preun %{?1}}\
+%{expand:%%preun -n %{bin_pkg_name}%{?1:-%{1}}}\
 %{_sbindir}/new-kernel-pkg --rminitrd --rmmoddep --remove %{KVRA}%{?1:.%{1}} || exit $?\
 if [ -x %{_sbindir}/weak-modules ]\
 then\
@@ -1410,7 +1398,7 @@ fi\
 %kernel_variant_post -v debug
 
 %ifarch s390x
-%postun kdump
+%postun -n %{bin_pkg_name}-kdump
     # Create softlink to latest remaining kdump kernel.
     # If no more kdump kernel is available, remove softlink.
     if [ "$(readlink /boot/zfcpdump)" == "/boot/vmlinuz-%{KVRA}.kdump" ]
@@ -1424,27 +1412,22 @@ fi\
         fi
     fi
 
-%post kdump
+%post -n %{bin_pkg_name}-kdump
     ln -sf /boot/vmlinuz-%{KVRA}.kdump /boot/zfcpdump
 %endif # s390x
-
-if [ -x /sbin/ldconfig ]
-then
-    /sbin/ldconfig -X || exit $?
-fi
 
 ###
 ### file lists
 ###
 
 %if %{with_headers}
-%files headers
+%files -n %{bin_pkg_name}-headers
 %defattr(-,root,root)
 /usr/include/*
 %endif
 
 %if %{with_bootwrapper}
-%files bootwrapper
+%files -n %{bin_pkg_name}-bootwrapper
 %defattr(-,root,root)
 /usr/sbin/*
 %{_libdir}/kernel-wrapper
@@ -1452,7 +1435,7 @@ fi
 
 # only some architecture builds need kernel-doc
 %if %{with_doc}
-%files doc
+%files -n %{bin_pkg_name}-doc
 %defattr(-,root,root)
 %{_datadir}/doc/kernel-doc-%{rpmversion}/Documentation/*
 %dir %{_datadir}/doc/kernel-doc-%{rpmversion}/Documentation
@@ -1464,13 +1447,13 @@ fi
 %endif
 
 %if %{with_kernel_abi_whitelists}
-%files -n kernel-abi-whitelists
+%files -n %{bin_pkg_name}-abi-whitelists
 %defattr(-,root,root,-)
 /lib/modules/kabi-*
 %endif
 
 %if %{with_perf}
-%files -n perf-pegas
+%files -n perf%{?bin_suffix:-%{bin_suffix}}
 %defattr(-,root,root)
 %{_bindir}/perf
 %dir %{_libexecdir}/perf-core
@@ -1481,21 +1464,21 @@ fi
 %{_datadir}/perf-core/strace/groups
 %{_datadir}/doc/perf-tip/tips.txt
 
-%files -n python-perf-pegas
+%files -n python-perf%{?bin_suffix:-%{bin_suffix}}
 %defattr(-,root,root)
 %{python_sitearch}
 
 %if %{with_debuginfo}
-%files -f perf-pegas-debuginfo.list -n perf-pegas-debuginfo
+%files -f perf-debuginfo.list -n perf%{?bin_suffix:-%{bin_suffix}}-debuginfo
 %defattr(-,root,root)
 
-%files -f python-perf-pegas-debuginfo.list -n python-perf-pegas-debuginfo
+%files -f python-perf-debuginfo.list -n python-perf%{?bin_suffix:-%{bin_suffix}}-debuginfo
 %defattr(-,root,root)
 %endif
 %endif
 
 %if %{with_tools}
-%files -n %{package_name}-tools -f cpupower.lang
+%files -n %{bin_pkg_name}-tools -f cpupower.lang
 %defattr(-,root,root)
 %ifarch %{cpupowerarchs}
 %{_bindir}/cpupower
@@ -1515,17 +1498,17 @@ fi
 %endif
 %{_bindir}/tmon
 %if %{with_debuginfo}
-%files -f %{package_name}-tools-debuginfo.list -n %{package_name}-tools-debuginfo
+%files -f tools-debuginfo.list -n %{bin_pkg_name}-tools-debuginfo
 %defattr(-,root,root)
 %endif
 
 %ifarch %{cpupowerarchs}
-%files -n %{package_name}-tools-libs
+%files -n %{bin_pkg_name}-tools-libs
 %defattr(-,root,root)
 %{_libdir}/libcpupower.so.0
 %{_libdir}/libcpupower.so.0.0.1
 
-%files -n %{package_name}-tools-libs-devel
+%files -n %{bin_pkg_name}-tools-libs-devel
 %defattr(-,root,root)
 %{_libdir}/libcpupower.so
 %{_includedir}/cpufreq.h
@@ -1535,7 +1518,7 @@ fi
 
 %if %{with_gcov}
 %ifarch x86_64 s390x ppc64 ppc64le
-%files gcov
+%files -n %{bin_pkg_name}-gcov
 %defattr(-,root,root)
 %{_builddir}
 %endif
@@ -1552,7 +1535,7 @@ fi
 #
 %define kernel_variant_files(k:) \
 %if %{1}\
-%{expand:%%files %{?2}}\
+%{expand:%%files -n %{bin_pkg_name}%{?2:-%{2}}}\
 %defattr(-,root,root)\
 /%{image_install_path}/%{?-k:%{-k*}}%{!?-k:vmlinuz}-%{KVRA}%{?2:.%{2}}\
 /%{image_install_path}/.vmlinuz-%{KVRA}%{?2:.%{2}}.hmac \
@@ -1568,16 +1551,16 @@ fi
 /lib/modules/%{KVRA}%{?2:.%{2}}/weak-updates\
 %ifarch %{vdso_arches}\
 /lib/modules/%{KVRA}%{?2:.%{2}}/vdso\
-/etc/ld.so.conf.d/%{package_name}-%{KVRA}%{?2:.%{2}}.conf\
+/etc/ld.so.conf.d/%{bin_pkg_name}-%{KVRA}%{?2:.%{2}}.conf\
 %endif\
 /lib/modules/%{KVRA}%{?2:.%{2}}/modules.*\
 %ghost /boot/initramfs-%{KVRA}%{?2:.%{2}}.img\
-%{expand:%%files %{?2:%{2}-}devel}\
+%{expand:%%files -n %{bin_pkg_name}-%{?2:%{2}-}devel}\
 %defattr(-,root,root)\
 /usr/src/kernels/%{KVRA}%{?2:.%{2}}\
 %if %{with_debuginfo}\
 %ifnarch noarch\
-%{expand:%%files -f debuginfo%{?2}.list %{?2:%{2}-}debuginfo}\
+%{expand:%%files -f debuginfo%{?2}.list -n %{bin_pkg_name}-%{?2:%{2}-}debuginfo}\
 %defattr(-,root,root)\
 %endif\
 %endif\
