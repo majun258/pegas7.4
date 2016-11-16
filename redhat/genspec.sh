@@ -21,7 +21,7 @@ RPM_VERSION="$RPMVERSION-$PKGRELEASE";
 
 echo >$clogf
 
-lasttag=$(git describe --match="kernel-${RPMVERSION}-*" --abbrev=0)
+lasttag=$(git describe --match="${PACKAGE_NAME}-${RPMVERSION}-*" --abbrev=0)
 echo "Gathering new log entries since $lasttag"
 git format-patch --first-parent --no-renames -k --stdout ${lasttag}.. | awk '
 BEGIN{TYPE="PATCHJUNK"; }

@@ -6,6 +6,7 @@
 
 spec=$1;
 zstream_flag=$2;
+package_name=$3;
 tmp=$(mktemp);
 
 function die
@@ -54,7 +55,7 @@ echo $bzs |
 	tr '\n' ',' |
 	sed -e "s/^/Resolves: rhbz#/; s/,\$//; s/,/, rhbz#/g;" >>$tmp;
 
-echo -e "kernel-$version\n"
+echo -e "${package_name}-${version}\n"
 cat $tmp;
 echo;
 rm -f $tmp;
