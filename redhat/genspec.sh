@@ -9,6 +9,7 @@ SPECRELEASE=$6
 DISTRO_BUILD=$7
 ZSTREAM_FLAG=$8
 PACKAGE_NAME=$9
+MARKER=${10}
 clogf="$SOURCES/changelog"
 # hide [redhat] entries from changelog
 HIDE_REDHAT=0;
@@ -22,6 +23,10 @@ RPM_VERSION="$RPMVERSION-$PKGRELEASE";
 echo >$clogf
 
 lasttag=$(git describe --match="${PACKAGE_NAME}-${RPMVERSION}-*" --abbrev=0)
+# if we didn't find the proper tag, assume this is the first release
+if [ -z "$lasttag" ]; then
+	lasttag=$(git describe --match="$MARKER" --abbrev=0)
+fi
 echo "Gathering new log entries since $lasttag"
 git format-patch --first-parent --no-renames -k --stdout ${lasttag}.. | awk '
 BEGIN{TYPE="PATCHJUNK"; }
