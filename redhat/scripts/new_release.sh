@@ -32,7 +32,7 @@ else
 	exit 1;
 fi
 
-sed -i -e "s/BUILD:=$RELEASE/BUILD:=$NEW_RELEASE/" $RHPATH/Makefile.common;
+sed -i -e "s/^BUILD:=$RELEASE/BUILD:=$NEW_RELEASE/" $RHPATH/Makefile.common;
 
 # update top Makefile
 sed -i -e "s/RHEL_RELEASE\ =.*/RHEL_RELEASE\ =\ $NEW_RELEASE/" $RHPATH/../Makefile;
