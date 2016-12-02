@@ -18,7 +18,7 @@ SRPMS:=$(RPM)/SRPMS
 SOURCES:=$(RPM)/SOURCES
 TESTPATCH:=$(REDHAT)/linux-kernel-test.patch
 FILTERDIFF:=/usr/bin/filterdiff -x '*redhat/*' -x '*/.gitignore' -x '*/makefile' -x '*/Makefile'
-ARCH_LIST=x86_64 ppc64 ppc64le s390x
+ARCH_LIST=x86_64 ppc64le s390x
 
 # RELEASED_KERNEL: swaps between the pre-release secureboot keys and
 # 		   the release one, for vmlinux signing.
