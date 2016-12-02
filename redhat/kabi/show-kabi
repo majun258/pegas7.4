@@ -41,6 +41,9 @@ def load_kabi(dirname, kabi, order, arch):
 
         for arch in archlist:
             for symbol in os.listdir(dirname + "/kabi_" + arch):
+                if symbol.startswith('.'):
+                    # skip hidden files
+                    continue
                 kabi_file = open(dirname + "/kabi_" + arch + "/" + symbol, "r")
                 line = []
                 #store version metadata
@@ -62,7 +65,10 @@ def check_struct(dirname):
     try:
         if os.path.isdir(dirname):
             for arch_dir in os.listdir(dirname):
-                match_files += len(os.listdir(dirname + "/" + arch_dir))
+                if os.path.isdir(dirname + "/" + arch_dir):
+                    match_files += len(os.listdir(dirname + "/" + arch_dir))
+                else:
+                    return -1
         return match_files
     except OSError:
         print "Invalid kabi-module/ root directory"
@@ -136,7 +142,7 @@ if __name__ == "__main__":
             usage()
             sys.exit(0)
 
-    if check_struct(kabi_dir) == 0:
+    if check_struct(kabi_dir) < 0:
         print "Invalid directory structure!!!"
         print "kabi-module/ specified as root must contain"
         print "arch specific directories like kabi_ppc64..."
