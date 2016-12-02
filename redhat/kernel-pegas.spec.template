@@ -68,9 +68,7 @@ Summary: The Linux kernel
 %define with_dbgonly   %{?_with_dbgonly:      1} %{?!_with_dbgonly:      0}
 
 # Control whether we perform a compat. check against published ABI.
-#%define with_kabichk   %{?_without_kabichk:   0} %{?!_without_kabichk:   1}
-# No kABI for now
-%define with_kabichk 0
+%define with_kabichk   %{?_without_kabichk:   0} %{?!_without_kabichk:   1}
 
 # should we do C=1 builds with sparse
 %define with_sparse    %{?_with_sparse:       1} %{?!_with_sparse:       0}
@@ -137,9 +135,6 @@ Summary: The Linux kernel
 %define with_doc 0
 %define with_kernel_abi_whitelists 0
 %endif
-
-# pegas has no kabi stuff yet, keep abi whitelists temporarily disabled
-%define with_kernel_abi_whitelists 0
 
 # don't build noarch kernels or headers (duh)
 %ifarch noarch
@@ -375,13 +370,10 @@ Source16: rhelkpatch1.x509
 Source18: check-kabi
 
 Source20: Module.kabi_x86_64
-#Source21: Module.kabi_ppc64
-Source22: Module.kabi_ppc64le
-Source23: Module.kabi_s390x
+Source21: Module.kabi_ppc64le
+Source22: Module.kabi_aarch64
 
-%if %{with_kernel_abi_whitelists}
 Source25: kernel-abi-whitelists-%{distro_build}.tar.bz2
-%endif
 
 Source50: %{src_pkg_name}-%{version}-x86_64.config
 Source51: %{src_pkg_name}-%{version}-x86_64-debug.config
