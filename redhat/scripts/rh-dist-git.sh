@@ -63,7 +63,8 @@ rhpkg upload $rhdistgit_tarball >/dev/null || die "uploading kernel tarball";
 # Only upload kernel-abi-whitelists tarball if its release counter changed.
 if [ "$rhdistgit_zstream_flag" == "no" ]; then
 	whitelists_file="$(awk '/kernel-abi-whitelists/ {print $2}' $tmpdir/$package_name/sources)"
-	grep "$whitelists_file" $rhdistgit_kabi_tarball >/dev/null || upload_kabi_tarball;
+	new_whitelists_file="$(basename $rhdistgit_kabi_tarball)"
+	[ "$whitelists_file" = "$new_whitelists_file" ] || upload_kabi_tarball;
 fi
 
 echo "Creating diff for review ($tmpdir/diff) and changelog"
