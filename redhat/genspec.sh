@@ -157,7 +157,7 @@ if [ "x$HIDE_REDHAT" == "x1" ]; then
 fi
 
 if [ "x$HIDE_UNSUPPORTED_ARCH" == "x1" ]; then
-	cat $clogf | egrep -v "^- \[(alpha|arc|arm|arm64|avr32|blackfin|c6x|cris|frv|h8300|hexagon|ia64|m32r|m68k|metag|microblaze|mips|mn10300|openrisc|parisc|score|sh|sparc|tile|um|unicore32|xtensa)\]" > $clogf.stripped
+	cat $clogf | egrep -v "^- \[(alpha|arc|arm|avr32|blackfin|c6x|cris|frv|h8300|hexagon|ia64|m32r|m68k|metag|microblaze|mips|mn10300|openrisc|parisc|score|sh|sparc|tile|um|unicore32|xtensa)\]" > $clogf.stripped
 	cp $clogf.stripped $clogf
 fi
 
