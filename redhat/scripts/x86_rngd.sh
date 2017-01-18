@@ -5,7 +5,7 @@
 
 echo -n "Trying hardware random number generator ..."
 rngd -r /dev/hwrandom >& /dev/null
-if [ $? -eq 1 ]; then
+if [ $? -ne 0 ]; then
 	echo "failed"
 	# try the pseudo-random number generator
 	echo "Using psuedo-random number instead"
