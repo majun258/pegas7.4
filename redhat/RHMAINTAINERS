@@ -412,9 +412,12 @@ F:	include/linux/hyperv.h
 F:	tools/hv/
 
 INFINIBAND SUBSYSTEM
+M:	Jonathan Toppins <jtoppins@redhat.com>
 M:	Don Dutile <ddutile@redhat.com>
 S:	Maintained
 F:	drivers/infiniband/
+F:	include/rdma/
+F:	include/uapi/rdma/
 
 IOMMU DRIVERS
 M:	Myron Stowe <myron.stowe@redhat.com>
