@@ -16,6 +16,9 @@
 DECLARE_RWSEM(pci_bus_sem);
 EXPORT_SYMBOL_GPL(pci_bus_sem);
 
+#define PCI_DEVICE_ID_BCM_VULCAN_GLUE_BRIDGE	0x9000
+#define PCI_DEVICE_ID_BCM_VULCAN_NODE_BRIDGE	0x9084
+
 /*
  * pci_for_each_dma_alias - Iterate over DMA aliases for a device
  * @pdev: starting downstream device
@@ -59,6 +62,13 @@ int pci_for_each_dma_alias(struct pci_dev *pdev,
 			continue;
 
 		tmp = bus->self;
+
+		/* skip SoC glue bridges above ITS and IOMMU association */
+		if (IS_ENABLED(CONFIG_ARCH_VULCAN) &&
+		    tmp->vendor == PCI_VENDOR_ID_BROADCOM &&
+		    (tmp->device == PCI_DEVICE_ID_BCM_VULCAN_GLUE_BRIDGE ||
+		     tmp->device == PCI_DEVICE_ID_BCM_VULCAN_NODE_BRIDGE))
+			return ret;
 
 		/*
 		 * PCIe-to-PCI/X bridges alias transactions from downstream
