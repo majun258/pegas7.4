@@ -1,1 +1,1 @@
-# CONFIG_CRASH_DUMP is not set
+CONFIG_CRASH_DUMP=y
