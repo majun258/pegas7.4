@@ -30,6 +30,12 @@
 
 #ifndef __ASSEMBLY__
 
+#ifndef arch_default_crash_size
+extern
+unsigned long long __init arch_default_crash_size(unsigned long long);
+#define arch_default_crash_size arch_default_crash_size
+#endif
+
 /**
  * crash_setup_regs() - save registers for the panic kernel
  *
