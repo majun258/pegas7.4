@@ -90,13 +90,14 @@ static struct mcfg_fixup mcfg_quirks[] = {
 	  &thunder_pem_ecam_ops, THUNDER_PEM_RES(0x894057000000UL, node) },  \
 	{ "CAVIUM", "THUNDERX", rev, 9 + (10 * (node)), MCFG_BUS_ANY,	    \
 	  &thunder_pem_ecam_ops, THUNDER_PEM_RES(0x89808f000000UL, node) }
-	/* SoC pass2.x */
-	THUNDER_PEM_QUIRK(1, 0),
-	THUNDER_PEM_QUIRK(1, 1),
-
 #define THUNDER_ECAM_QUIRK(rev, seg)					\
 	{ "CAVIUM", "THUNDERX", rev, seg, MCFG_BUS_ANY,			\
 	&pci_thunder_ecam_ops }
+	/* SoC pass2.x */
+	THUNDER_PEM_QUIRK(1, 0),
+	THUNDER_PEM_QUIRK(1, 1),
+	THUNDER_ECAM_QUIRK(1, 10),
+
 	/* SoC pass1.x */
 	THUNDER_PEM_QUIRK(2, 0),	/* off-chip devices */
 	THUNDER_PEM_QUIRK(2, 1),	/* off-chip devices */
