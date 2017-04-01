@@ -53,6 +53,8 @@
 
 #include <linux/amba/bus.h>
 
+#include <asm/cputype.h>
+
 #include "io-pgtable.h"
 
 /* Maximum number of context banks per SMMU */
@@ -1985,6 +1987,24 @@ static const struct of_device_id arm_smmu_of_match[] = {
 MODULE_DEVICE_TABLE(of, arm_smmu_of_match);
 
 #ifdef CONFIG_ACPI
+
+static int acpi_smmu_enable_cavium(struct arm_smmu_device *smmu, int ret)
+{
+	u32 cpu_model;
+
+	if (!IS_ENABLED(CONFIG_ARM64))
+		return ret;
+
+	cpu_model = read_cpuid_id() & MIDR_CPU_MODEL_MASK;
+	if (cpu_model != MIDR_THUNDERX)
+		return ret;
+
+	smmu->version = ARM_SMMU_V2;
+	smmu->model = CAVIUM_SMMUV2;
+
+	return 0;
+}
+
 static int acpi_smmu_get_data(u32 model, struct arm_smmu_device *smmu)
 {
 	int ret = 0;
@@ -2007,7 +2027,7 @@ static int acpi_smmu_get_data(u32 model, struct arm_smmu_device *smmu)
 		ret = -ENODEV;
 	}
 
-	return ret;
+	return acpi_smmu_enable_cavium(smmu, ret);
 }
 
 static int arm_smmu_device_acpi_probe(struct platform_device *pdev,
