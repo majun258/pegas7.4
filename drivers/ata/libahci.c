@@ -639,6 +639,7 @@ int ahci_stop_engine(struct ata_port *ap)
 {
 	void __iomem *port_mmio = ahci_port_base(ap);
 	struct ahci_host_priv *hpriv = ap->host->private_data;
+	struct device *dev = ap->host->dev;
 	u32 tmp;
 
 	/*
@@ -663,6 +664,15 @@ int ahci_stop_engine(struct ata_port *ap)
 	/* setting HBA to idle */
 	tmp &= ~PORT_CMD_START;
 	writel(tmp, port_mmio + PORT_CMD);
+
+	if (dev_is_pci(dev) && to_pci_dev(dev)->vendor == 0x14e4 &&
+	    to_pci_dev(dev)->device == 0x9027) {
+		tmp = readl(hpriv->mmio + 0x8000);
+		writel(tmp | (1 << 26), hpriv->mmio + 0x8000);
+		udelay(1);
+		writel(tmp & ~(1 << 26), hpriv->mmio + 0x8000);
+		dev_warn(dev, "T99 ahci_stop_engine workaround [%x]\n", tmp);
+	}
 
 	/* wait for engine to stop. This could be as long as 500 msec */
 	tmp = ata_wait_register(ap, port_mmio + PORT_CMD,
