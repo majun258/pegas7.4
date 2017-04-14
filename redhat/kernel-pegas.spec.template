@@ -979,6 +979,10 @@ BuildKernel() {
 %endif
     cp -a include $RPM_BUILD_ROOT/lib/modules/$KernelVer/build/include
 
+    # include/trace/events/wbt.h uses blk-{wbt,stat}.h private kernel headers,
+    # and systemtap uses wbt.h when we run a script which uses wbt:* trace points
+    cp block/blk-{wbt,stat}.h $RPM_BUILD_ROOT/lib/modules/$KernelVer/build/block/
+
     # copy objtool for kernel-devel (needed for building external modules)
     if grep -q CONFIG_STACK_VALIDATION=y .config; then
       mkdir -p $RPM_BUILD_ROOT/lib/modules/$KernelVer/build/tools/objtool
