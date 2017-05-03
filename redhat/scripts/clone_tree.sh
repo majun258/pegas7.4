@@ -20,7 +20,7 @@ tmp="$(mktemp -d --tmpdir="$tmp_dir" RHEL7.$date.XXXXXXXX)";
 cd $tmp || die "Unable to create temporary directory";
 
 if [ -n "$repo" -a -n "$local" ]; then
-	git clone --reference $local $repo kernel >/dev/null || die "Unable to clone using local cache";
+	git clone --reference $local $repo kernel-pegas >/dev/null || die "Unable to clone using local cache";
 	# if there're tarballs present that are listed in the "sources" file,
 	# copy them or it'll be downloaded again
 	if [ -e "$local/sources" ]; then
@@ -32,7 +32,7 @@ if [ -n "$repo" -a -n "$local" ]; then
 	fi
 else
 	echo "No local repo, cloning using rhpkg" >&2;
-	rhpkg clone kernel >/dev/null || die "Unable to clone using rhpkg";
+	rhpkg clone kernel-pegas >/dev/null || die "Unable to clone using rhpkg";
 fi
 
 echo $tmp;

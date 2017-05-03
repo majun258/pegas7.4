@@ -20,4 +20,4 @@ ifeq ("$(RHDISTGIT_CACHE)", "")
  endif
 endif
 
-RHDISTGIT:="ssh://$(RHDISTGIT_USER)@pkgs.devel.redhat.com/rpms/kernel"
+RHDISTGIT:="ssh://$(RHDISTGIT_USER)@pkgs.devel.redhat.com/rpms/kernel-pegas"

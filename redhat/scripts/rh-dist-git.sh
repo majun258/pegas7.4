@@ -29,8 +29,8 @@ function die
 function upload_kabi_tarball()
 {
 	echo "Uploading kernel-abi-whitelists tarball"
-	sed -i "/kernel-abi-whitelist.*.tar.bz2/d" $tmpdir/kernel/sources;
-	sed -i "/kernel-abi-whitelist.*.tar.bz2/d" $tmpdir/kernel/.gitignore;
+	sed -i "/kernel-abi-whitelist.*.tar.bz2/d" $tmpdir/kernel-pegas/sources;
+	sed -i "/kernel-abi-whitelist.*.tar.bz2/d" $tmpdir/kernel-pegas/.gitignore;
 	rhpkg upload $rhdistgit_kabi_tarball >/dev/null || die "uploading kabi tarball";
 }
 
@@ -45,7 +45,7 @@ tmpdir=$($redhat/scripts/clone_tree.sh "$rhdistgit_server" "$rhdistgit_cache" "$
 
 echo "Switching the branch"
 # change in the correct branch
-cd $tmpdir/kernel;
+cd $tmpdir/kernel-pegas;
 rhpkg switch-branch $rhdistgit_branch || die "switching to branch $rhdistgit_branch";
 
 echo "Copying updated files"
@@ -54,20 +54,20 @@ $redhat/scripts/copy_files.sh "$topdir" "$tmpdir"
 
 echo "Uploading new tarballs"
 # upload tarballs
-sed -i "/linux-3.*.el7.tar.xz/d" $tmpdir/kernel/sources;
-sed -i "/linux-3.*.el7.tar.xz/d" $tmpdir/kernel/.gitignore;
+sed -i "/linux-3.*.el7.tar.xz/d" $tmpdir/kernel-pegas/sources;
+sed -i "/linux-3.*.el7.tar.xz/d" $tmpdir/kernel-pegas/.gitignore;
 rhpkg upload $rhdistgit_tarball >/dev/null || die "uploading kernel tarball";
 
 # Only upload kernel-abi-whitelists tarball if its release counter changed.
 if [ "$rhdistgit_zstream_flag" == "no" ]; then
-	whitelists_file="$(awk '/kernel-abi-whitelists/ {print $2}' $tmpdir/kernel/sources)"
+	whitelists_file="$(awk '/kernel-abi-whitelists/ {print $2}' $tmpdir/kernel-pegas/sources)"
 	grep "$whitelists_file" $rhdistgit_kabi_tarball >/dev/null || upload_kabi_tarball;
 fi
 
 echo "Creating diff for review ($tmpdir/diff) and changelog"
 # diff the result (redhat/cvs/dontdiff). note: diff reuturns 1 if
 # differences were found
-diff -X $redhat/git/dontdiff -upr $tmpdir/kernel $redhat/rpm/SOURCES/ > $tmpdir/diff;
+diff -X $redhat/git/dontdiff -upr $tmpdir/kernel-pegas $redhat/rpm/SOURCES/ > $tmpdir/diff;
 # creating the changelog file
 $redhat/scripts/create_distgit_changelog.sh $redhat/rpm/SOURCES/kernel-pegas.spec "$rhdistgit_zstream_flag" >$tmpdir/changelog
 

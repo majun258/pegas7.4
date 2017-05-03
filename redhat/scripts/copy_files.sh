@@ -19,14 +19,14 @@ function die
 }
 
 if [ -z "$tree" -o ! -d "$sources" ]; then
-	die "\"$tree\" doesn't seem to be a valid kernel source tree";
+	die "\"$tree\" doesn't seem to be a valid kernel-pegas source tree";
 fi
 
 if [ ! -d "$cloned" ]; then
 	die "\"$cloned\" doesn't seem to be a valid directory";
 fi
 
-cd $cloned/kernel || die "\"$cloned\" doesn't seem to have a dist-git clone";
+cd $cloned/kernel-pegas || die "\"$cloned\" doesn't seem to have a dist-git clone";
 
 # copy the other files
 cp $(cat $redhat/git/files | sed -e "s,^,$sources/,") . || die "Unable to copy files";
