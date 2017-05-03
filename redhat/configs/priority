@@ -13,9 +13,9 @@ x86_64-debug=generic:generic-x86_64:debug:debug-x86_64
 ppc64le=generic:generic-powerpc64:generic-powerpc64le
 ppc64le-debug=generic:generic-powerpc64:generic-powerpc64le:debug:debug-powerpc64
 # s390x
-#s390x=generic:generic-s390x
-#s390x-debug=generic:generic-s390x:debug:debug-s390x
-#s390x-kdump=generic:generic-s390x:generic-s390x-kdump
+s390x=generic:generic-s390x
+s390x-debug=generic:generic-s390x:debug:debug-s390x
+s390x-kdump=generic:generic-s390x:generic-s390x-kdump
 # aarch64
 aarch64=generic:generic-aarch64
 aarch64-debug=generic:generic-aarch64:debug:debug-aarch64

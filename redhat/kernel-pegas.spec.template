@@ -121,12 +121,12 @@ Summary: The Linux kernel
 %endif
 
 # These arches install vdso/ directories.
-%define vdso_arches x86_64 ppc ppc64le aarch64
+%define vdso_arches aarch64 ppc64le s390x x86_64
 
 # Overrides for generic default options
 
 # only build debug kernel on architectures below
-%ifnarch x86_64 ppc64le aarch64
+%ifnarch aarch64 ppc64le s390x x86_64
 %define with_debug 0
 %endif
 
@@ -215,7 +215,7 @@ Summary: The Linux kernel
 # We only build kernel headers package on the following, for being able to do
 # builds with a different bit length (eg. 32-bit build on a 64-bit environment).
 # Do not remove them from ExclusiveArch tag below
-%define nobuildarches i686 ppc
+%define nobuildarches i686 ppc s390
 
 %ifarch %nobuildarches
 %define with_bootwrapper 0
@@ -304,7 +304,7 @@ Release: %{pkg_release}
 # package, don't exclude them in ExclusiveArch below, but add them to
 # %%nobuildarches (above) instead. Example: if we support x86_64, we must build
 # the i686 (32-bit) headers and provide a package with them
-ExclusiveArch: aarch64 i686 noarch ppc ppc64le x86_64
+ExclusiveArch: aarch64 i686 noarch ppc ppc64le s390 s390x x86_64
 ExclusiveOS: Linux
 
 #
@@ -372,6 +372,7 @@ Source18: check-kabi
 Source20: Module.kabi_x86_64
 Source21: Module.kabi_ppc64le
 Source22: Module.kabi_aarch64
+Source23: Module.kabi_s390x
 
 Source25: kernel-abi-whitelists-%{distro_build}.tar.bz2
 
@@ -383,9 +384,9 @@ Source51: %{src_pkg_name}-%{version}-x86_64-debug.config
 Source62: %{src_pkg_name}-%{version}-ppc64le.config
 Source63: %{src_pkg_name}-%{version}-ppc64le-debug.config
 
-# Source70: %{src_pkg_name}-%{version}-s390x.config
-# Source71: %{src_pkg_name}-%{version}-s390x-debug.config
-# Source72: %{src_pkg_name}-%{version}-s390x-kdump.config
+Source70: %{src_pkg_name}-%{version}-s390x.config
+Source71: %{src_pkg_name}-%{version}-s390x-debug.config
+Source72: %{src_pkg_name}-%{version}-s390x-kdump.config
 
 Source80: %{src_pkg_name}-%{version}-aarch64.config
 Source81: %{src_pkg_name}-%{version}-aarch64-debug.config
