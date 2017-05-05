@@ -117,10 +117,20 @@ static notrace u64 get_clock_shifted_nsec(u64 cycle_last, u64 mult)
 	u64 res;
 
 	/* Read the virtual counter. */
-	isb();
+	/*
+	 * This normally requires an ISB but since we know the
+	 * read of the last cycle will always be after the
+	 * read of the values are valid word.
+	 */
 	asm volatile("mrs %0, cntvct_el0" : "=r" (res) :: "memory");
 
-	res = res - cycle_last;
+	/*
+	 * If the current cycle is greater than the last,
+	 *  then get the difference.
+	 */
+	if (res > cycle_last)
+		res = res - cycle_last;
+
 	/* We can only guarantee 56 bits of precision. */
 	res &= ~(0xff00ul<<48);
 	return res * mult;
