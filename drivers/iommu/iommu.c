@@ -599,7 +599,9 @@ rename:
 
 	trace_add_device_to_group(group->id, dev);
 
-	pr_info("Adding device %s to group %d\n", dev_name(dev), group->id);
+	pr_info("Adding device %s to group %d, default domain type %d\n",
+		dev_name(dev), group->id,
+		group->default_domain ? group->default_domain->type : -1);
 
 	return 0;
 
