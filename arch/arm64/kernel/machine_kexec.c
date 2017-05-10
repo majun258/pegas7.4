@@ -29,6 +29,16 @@
 extern const unsigned char arm64_relocate_new_kernel[];
 extern const unsigned long arm64_relocate_new_kernel_size;
 
+unsigned long long __init arch_default_crash_size(unsigned long long total_size)
+{
+	/*
+	 * ARM64 systems work fine with 512M of memory, because we pass
+	 * nr_cpus=1,swiotlb=noforce,cma=0 in crash kernel command line from
+	 * kexec-tools now.
+	 */
+	return SZ_512M;
+}
+
 /**
  * kexec_image_info - For debugging output.
  */
