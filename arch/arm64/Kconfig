@@ -737,15 +737,6 @@ config KEXEC
 	  but it is independent of the system firmware.   And like a reboot
 	  you can start any kernel with it, not just Linux.
 
-config KEXEC_AUTO_RESERVE
-	bool "automatically reserve memory for kexec kernel"
-	depends on KEXEC
-	default y
-	---help---
-	 Automatically reserve memory for a kexec kernel, so that you don't
-	 need to specify numbers for the "crashkernel=X@Y" boot option,
-	 instead you can use "crashkernel=auto".
-
 config CRASH_DUMP
 	bool "Build kdump crash kernel"
 	help
