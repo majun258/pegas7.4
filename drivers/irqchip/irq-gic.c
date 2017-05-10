@@ -462,7 +462,14 @@ static void gic_cpu_if_up(struct gic_chip_data *gic)
 	*/
 	bypass = readl(cpu_base + GIC_CPU_CTRL);
 	bypass &= GICC_DIS_BYPASS_MASK;
-
+#ifdef CONFIG_ARM64
+	/* FIXME: when ARM64 starts supporting FIQ mode.
+	 *
+	 * Until ARM64 supports FIQ handling, force FIQBypDisGrp1 to
+	 * '1', so that bypass FIQ signal is not signaled to the processor.
+	 */
+	bypass |= GICC_DIS_BYPASS_FIQ_TO_CPU;
+#endif
 	writel_relaxed(bypass | mode | GICC_ENABLE, cpu_base + GIC_CPU_CTRL);
 }
 
