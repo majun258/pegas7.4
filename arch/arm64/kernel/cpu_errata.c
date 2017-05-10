@@ -167,6 +167,11 @@ const struct arm64_cpu_capabilities arm64_errata[] = {
 	},
 #endif
 	{
+		.desc = "Qualcomm Technologies KRYO erratum XXX",
+		.capability = ARM64_WORKAROUND_KRYO_XXX,
+		MIDR_RANGE(MIDR_QCOM_KRYO, 0x00, 0x01),
+	},
+	{
 	}
 };
 

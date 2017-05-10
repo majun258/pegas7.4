@@ -338,6 +338,14 @@ asm(
 	asm volatile("msr_s " __stringify(r) ", %x0" : : "rZ" (__val));	\
 } while (0)
 
+#define write_sysreg_s_kryo(v, r) do {					\
+	u64 __val = (u64)v;						\
+	asm volatile(ALTERNATIVE("msr_s " __stringify(r) ", %x0",	\
+				 "nop ",				\
+				 ARM64_WORKAROUND_KRYO_XXX)		\
+		     : : "rZ" (__val));					\
+} while (0)
+
 static inline void config_sctlr_el1(u32 clear, u32 set)
 {
 	u32 val;

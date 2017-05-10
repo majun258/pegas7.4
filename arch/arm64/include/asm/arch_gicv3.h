@@ -83,6 +83,7 @@
 
 #define read_gicreg			read_sysreg_s
 #define write_gicreg			write_sysreg_s
+#define write_gicreg_kryo		write_sysreg_s_kryo
 
 /*
  * Low-level accessors
