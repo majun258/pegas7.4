@@ -1210,17 +1210,16 @@ cd linux-%{KVRA}
 
 %if %{with_doc}
 docdir=$RPM_BUILD_ROOT%{_datadir}/doc/kernel-doc-%{rpmversion}
-man9dir=$RPM_BUILD_ROOT%{_datadir}/man/man9
+man9dir=$RPM_BUILD_ROOT%{_datadir}
 
 # copy the source over
 mkdir -p $docdir
 tar -f - --exclude=man --exclude='.*' -c Documentation | tar xf - -C $docdir
 
 # Install man pages for the kernel API.
-mkdir -p $man9dir
-find Documentation/DocBook/man -name '*.9.gz' -print0 |
-xargs -0 --no-run-if-empty %{__install} --backup=numbered -m 444 -t $man9dir $m
-ls $man9dir | grep -q '' || > $man9dir/BROKEN
+mkdir -p $man9dir/man/man9
+make INSTALL_MAN_PATH=$man9dir installmandocs
+ls $man9dir/man/man9 | grep -q '' || > $man9dir/man/man9/BROKEN
 %endif # with_doc
 
 # We have to do the headers install before the tools install because the
