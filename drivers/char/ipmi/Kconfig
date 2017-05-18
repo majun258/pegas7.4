@@ -75,6 +75,13 @@ config IPMI_POWEROFF
          This enables a function to power off the system with IPMI if
 	 the IPMI management controller is capable of this.
 
+config IPMI_HISI_LPC_BT
+       tristate 'IPMI Hisilicon LPC BT handler'
+       help
+         Provides a driver for Hisilicon System Interfaces based on LPC.
+	 Currently, only BT is supported.  If you are using IPMI on HiP06/HiP07,
+	 you should probably say "y" here.
+
 endif # IPMI_HANDLER
 
 config ASPEED_BT_IPMI_BMC
