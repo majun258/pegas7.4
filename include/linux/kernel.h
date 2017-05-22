@@ -513,7 +513,25 @@ extern enum system_states {
 #define TAINT_UNSIGNED_MODULE		13
 #define TAINT_SOFTLOCKUP		14
 #define TAINT_LIVEPATCH			15
-#define TAINT_FLAGS_COUNT		16
+#define TAINT_16			16
+#define TAINT_17			17
+#define TAINT_18			18
+#define TAINT_19			19
+#define TAINT_20			20
+#define TAINT_21			21
+#define TAINT_22			22
+#define TAINT_23			23
+#define TAINT_24			24
+#define TAINT_25			25
+#define TAINT_26			26
+#define TAINT_27			27
+/* Reserving bits for vendor specific uses */
+#define TAINT_HARDWARE_UNSUPPORTED	28
+#define TAINT_TECH_PREVIEW		29
+/* Bits 30 - 31 are reserved for Red Hat use only */
+#define TAINT_RESERVED30		30
+#define TAINT_RESERVED31		31
+#define TAINT_FLAGS_COUNT		32
 
 struct taint_flag {
 	char c_true;	/* character printed when tainted */
@@ -869,4 +887,10 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
 	 /* OTHER_WRITABLE?  Generally considered a bad idea. */		\
 	 BUILD_BUG_ON_ZERO((perms) & 2) +					\
 	 (perms))
+
+struct module;
+
+void mark_hardware_unsupported(const char *msg);
+void mark_tech_preview(const char *msg, struct module *mod);
+
 #endif
