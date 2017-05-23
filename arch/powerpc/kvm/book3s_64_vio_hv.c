@@ -187,6 +187,10 @@ long kvmppc_rm_h_put_tce(struct kvm_vcpu *vcpu, unsigned long liobn,
 	/* udbg_printf("H_PUT_TCE(): liobn=0x%lx ioba=0x%lx, tce=0x%lx\n", */
 	/* 	    liobn, ioba, tce); */
 
+	/* For radix, we might be in virtual mode, so punt */
+	if (kvm_is_radix(vcpu->kvm))
+		return H_TOO_HARD;
+
 	stt = kvmppc_find_table(vcpu->kvm, liobn);
 	if (!stt)
 		return H_TOO_HARD;
@@ -239,6 +243,10 @@ long kvmppc_rm_h_put_tce_indirect(struct kvm_vcpu *vcpu,
 	long i, ret = H_SUCCESS;
 	unsigned long tces, entry, ua = 0;
 	unsigned long *rmap = NULL;
+
+	/* For radix, we might be in virtual mode, so punt */
+	if (kvm_is_radix(vcpu->kvm))
+		return H_TOO_HARD;
 
 	stt = kvmppc_find_table(vcpu->kvm, liobn);
 	if (!stt)
@@ -301,6 +309,10 @@ long kvmppc_rm_h_stuff_tce(struct kvm_vcpu *vcpu,
 	struct kvmppc_spapr_tce_table *stt;
 	long i, ret;
 
+	/* For radix, we might be in virtual mode, so punt */
+	if (kvm_is_radix(vcpu->kvm))
+		return H_TOO_HARD;
+
 	stt = kvmppc_find_table(vcpu->kvm, liobn);
 	if (!stt)
 		return H_TOO_HARD;
@@ -319,6 +331,7 @@ long kvmppc_rm_h_stuff_tce(struct kvm_vcpu *vcpu,
 	return H_SUCCESS;
 }
 
+/* This can be called in either virtual mode or real mode */
 long kvmppc_h_get_tce(struct kvm_vcpu *vcpu, unsigned long liobn,
 		      unsigned long ioba)
 {
