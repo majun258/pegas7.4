@@ -509,6 +509,19 @@ void __init initialize_cache_info(void)
 	} else
 		cpu = of_find_node_by_type(NULL, "cpu");
 
+	/* RHEL only supports POWER 9 */
+	if (pvr == PVR_POWER8 || pvr == PVR_POWER8E ||
+	    pvr == PVR_POWER8NVL) {
+		if (pvr_version_is(PVR_POWER8))
+			pr_crit("Detected Power 8 processor \n");
+		if (pvr_version_is(PVR_POWER8E))
+			pr_crit("Detected Power 8 E processor \n");
+		if (pvr_version_is(PVR_POWER8NVL))
+			pr_crit("Detected Power 8 NVL processor \n");
+		
+		 mark_hardware_unsupported("Processor"); 
+	}
+		
 	/*
 	 * We're assuming *all* of the CPUs have the same
 	 * d-cache and i-cache sizes... -Peter
