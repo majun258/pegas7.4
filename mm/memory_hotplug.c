@@ -2197,3 +2197,19 @@ void __ref remove_memory(int nid, u64 start, u64 size)
 }
 EXPORT_SYMBOL_GPL(remove_memory);
 #endif /* CONFIG_MEMORY_HOTREMOVE */
+
+#ifndef CONFIG_ARCH_HAS_ADD_PAGES
+int add_pages(int nid, unsigned long start_pfn,
+	      unsigned long nr_pages, bool for_device)
+{
+	struct pglist_data *pgdat = NODE_DATA(nid);
+	struct zone *zone;
+
+	zone = pgdat->node_zones +
+		zone_for_memory(nid, start_pfn << PAGE_SHIFT,
+				nr_pages << PAGE_SHIFT,
+				ZONE_NORMAL, for_device);
+
+	return __add_pages(nid, zone, start_pfn, nr_pages);
+}
+#endif /* ARCH_HAS_ADD_PAGES */
