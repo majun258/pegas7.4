@@ -418,6 +418,7 @@ enum arm_smmu_domain_stage {
 	ARM_SMMU_DOMAIN_S1 = 0,
 	ARM_SMMU_DOMAIN_S2,
 	ARM_SMMU_DOMAIN_NESTED,
+	ARM_SMMU_DOMAIN_BYPASS,
 };
 
 struct arm_smmu_domain {
@@ -843,6 +844,12 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 	if (smmu_domain->smmu)
 		goto out_unlock;
 
+	if (domain->type == IOMMU_DOMAIN_IDENTITY) {
+		smmu_domain->stage = ARM_SMMU_DOMAIN_BYPASS;
+		smmu_domain->smmu = smmu;
+		goto out_unlock;
+	}
+
 	/*
 	 * Mapping the requested stage onto what we support is surprisingly
 	 * complicated, mainly because the spec allows S1+S2 SMMUs without
@@ -1003,7 +1010,7 @@ static void arm_smmu_destroy_domain_context(struct iommu_domain *domain)
 	void __iomem *cb_base;
 	int irq;
 
-	if (!smmu)
+	if (!smmu || domain->type == IOMMU_DOMAIN_IDENTITY)
 		return;
 
 	/*
@@ -1026,7 +1033,9 @@ static struct iommu_domain *arm_smmu_domain_alloc(unsigned type)
 {
 	struct arm_smmu_domain *smmu_domain;
 
-	if (type != IOMMU_DOMAIN_UNMANAGED && type != IOMMU_DOMAIN_DMA)
+	if (type != IOMMU_DOMAIN_UNMANAGED &&
+	    type != IOMMU_DOMAIN_DMA &&
+	    type != IOMMU_DOMAIN_IDENTITY)
 		return NULL;
 	/*
 	 * Allocate the domain and initialise some of its data structures.
@@ -1255,9 +1264,14 @@ static int arm_smmu_domain_add_master(struct arm_smmu_domain *smmu_domain,
 {
 	struct arm_smmu_device *smmu = smmu_domain->smmu;
 	struct arm_smmu_s2cr *s2cr = smmu->s2crs;
-	enum arm_smmu_s2cr_type type = S2CR_TYPE_TRANS;
 	u8 cbndx = smmu_domain->cfg.cbndx;
+	enum arm_smmu_s2cr_type type;
 	int i, idx;
+
+	if (smmu_domain->stage == ARM_SMMU_DOMAIN_BYPASS)
+		type = S2CR_TYPE_BYPASS;
+	else
+		type = S2CR_TYPE_TRANS;
 
 	for_each_cfg_sme(fwspec, i, idx) {
 		if (type == s2cr[idx].type && cbndx == s2cr[idx].cbndx)
@@ -1395,6 +1409,9 @@ static phys_addr_t arm_smmu_iova_to_phys(struct iommu_domain *domain,
 	unsigned long flags;
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
 	struct io_pgtable_ops *ops= smmu_domain->pgtbl_ops;
+
+	if (domain->type == IOMMU_DOMAIN_IDENTITY)
+		return iova;
 
 	if (!ops)
 		return 0;
@@ -1554,6 +1571,9 @@ static int arm_smmu_domain_get_attr(struct iommu_domain *domain,
 {
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
 
+	if (domain->type != IOMMU_DOMAIN_UNMANAGED)
+		return -EINVAL;
+
 	switch (attr) {
 	case DOMAIN_ATTR_NESTING:
 		*(int *)data = (smmu_domain->stage == ARM_SMMU_DOMAIN_NESTED);
@@ -1568,6 +1588,9 @@ static int arm_smmu_domain_set_attr(struct iommu_domain *domain,
 {
 	int ret = 0;
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
+
+	if (domain->type != IOMMU_DOMAIN_UNMANAGED)
+		return -EINVAL;
 
 	mutex_lock(&smmu_domain->init_mutex);
 

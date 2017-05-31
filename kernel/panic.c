@@ -321,6 +321,20 @@ const struct taint_flag taint_flags[TAINT_FLAGS_COUNT] = {
 	{ 'E', ' ', true },	/* TAINT_UNSIGNED_MODULE */
 	{ 'L', ' ', false },	/* TAINT_SOFTLOCKUP */
 	{ 'K', ' ', true },	/* TAINT_LIVEPATCH */
+	{ '?', '-', false },	/* TAINT_16 */
+	{ '?', '-', false },	/* TAINT_17 */
+	{ '?', '-', false },	/* TAINT_18 */
+	{ '?', '-', false },	/* TAINT_19 */
+	{ '?', '-', false },	/* TAINT_20 */
+	{ '?', '-', false },	/* TAINT_21 */
+	{ '?', '-', false },	/* TAINT_22 */
+	{ '?', '-', false },	/* TAINT_23 */
+	{ '?', '-', false },	/* TAINT_24 */
+	{ '?', '-', false },	/* TAINT_25 */
+	{ '?', '-', false },	/* TAINT_26 */
+	{ '?', '-', false },	/* TAINT_27 */
+	{ 'H', ' ', false },	/* TAINT_HARDWARE_UNSUPPORTED */
+	{ 'T', ' ', true },	/* TAINT_TECH_PREVIEW */
 };
 
 /**
