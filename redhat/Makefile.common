@@ -7,11 +7,11 @@ KVERSION:=4.11.0
 GITID:= $(shell git log --max-count=1 --pretty=format:%H)
 RPMVERSION:=4.11.0
 # marker is git tag which we base off of for exporting patches
-MARKER:=v4.11
+MARKER:=kernel-pegas-4.11.0-5.el7
 PREBUILD:=
 BUILD:=5
 DIST:=.el7
-PACKAGE_NAME:=kernel-pegas
+PACKAGE_NAME:=kernel-alt
 SPECFILE:=$(PACKAGE_NAME).spec
 RPM:=$(REDHAT)/rpm
 SRPMS:=$(RPM)/SRPMS

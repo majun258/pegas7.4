@@ -4,7 +4,7 @@
 *.sign
 .gitignore
 .cvsignore
-.kernel-pegas.spec
+.kernel-alt.spec
 .git
 configs
 scripts
@@ -16,7 +16,7 @@ mirrors
 gen-patches
 dontdiff
 kernel-3.10
-kernel-pegas.spec
+kernel-alt.spec
 branch
 gen-patches
 sources

@@ -3,8 +3,8 @@ include Makefile.rhpkg
 include Makefile.test
 
 LANG=C
-BUILD_DEFAULT_TARGET = pegas-rhel-7.4-candidate
-BUILD_SCRATCH_TARGET = pegas-rhel-7.4-candidate
+BUILD_DEFAULT_TARGET = rhel-alt-$(RHELMAJOR).$(RHELMINOR)-candidate
+BUILD_SCRATCH_TARGET = rhel-alt-$(RHELMAJOR).$(RHELMINOR)-candidate
 
 ifeq ("$(ZSTREAM)", "yes")
   ifeq ("$(origin RHDISTGIT_BRANCH)", "command line")
