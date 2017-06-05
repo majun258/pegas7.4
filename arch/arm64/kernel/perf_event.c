@@ -975,6 +975,9 @@ static void __armv8pmu_probe_pmu(void *info)
 	if (pmuver != 1)
 		return;
 
+	if (!(armv8pmu_pmcr_read() >> ARMV8_PMU_PMCR_IMP_SHIFT))
+		return;
+
 	probe->present = true;
 
 	/* Read the nb of CNTx counters supported from PMNC */
