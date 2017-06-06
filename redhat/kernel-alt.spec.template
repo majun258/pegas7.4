@@ -1573,6 +1573,9 @@ fi\
 
 %changelog
 %%CHANGELOG%%
+* Tue Jun 06 2017 Herton R. Krzesinski <herton@redhat.com> [4.11.0-6.el7]
+- [redhat] rename kernel-pegas to kernel-alt ("Herton R. Krzesinski")
+
 * Fri May 26 2017 Herton R. Krzesinski <herton@redhat.com> [4.11.0-5.el7]
 - [powerpc] Mark IBM Power 8 unsupported (Steve Best) [1451378]
 - [powerpc] kvm: ppc: book3s hv: Add radix checks in real-mode hypercall handlers (David Gibson) [1449039]
