@@ -9,7 +9,7 @@ RPMVERSION:=4.11.0
 # marker is git tag which we base off of for exporting patches
 MARKER:=kernel-pegas-4.11.0-5.el7
 PREBUILD:=
-BUILD:=6
+BUILD:=7
 DIST:=.el7
 PACKAGE_NAME:=kernel-alt
 SPECFILE:=$(PACKAGE_NAME).spec
