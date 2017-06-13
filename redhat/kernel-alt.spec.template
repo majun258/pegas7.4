@@ -1573,6 +1573,34 @@ fi\
 
 %changelog
 %%CHANGELOG%%
+* Tue Jun 13 2017 Herton R. Krzesinski <herton@redhat.com> [4.11.0-8.el7]
+- [net] ipv6: Fix leak in ipv6_gso_segment() (Eric Garver) [1459953] {CVE-2017-9074}
+- [net] ipv6: xfrm: Handle errors reported by xfrm6_find_1stfragopt() (Eric Garver) [1459953] {CVE-2017-9074}
+- [net] ipv6: Check ip6_find_1stfragopt() return value properly (Eric Garver) [1459953] {CVE-2017-9074}
+- [net] ipv6: Prevent overrun when parsing v6 header options (Eric Garver) [1459953] {CVE-2017-9074}
+- [nvme] nvme-rdma: Support ctrl_loss_tmo (David Milburn) [1443936]
+- [nvme] nvme-fabrics: Allow ctrl loss timeout configuration (David Milburn) [1443936]
+- [nvme] nvme-rdma: get rid of local reconnect_delay (David Milburn) [1443936]
+- [powerpc] 64s: Idle POWER8 avoid full state loss recovery where possible (Steve Best) [1368734]
+- [powerpc] 64s: Idle do not hold reservation longer than required (Steve Best) [1368734]
+- [powerpc] 64s: Expand core idle state bits (Steve Best) [1368734]
+- [powerpc] 64s: Fix POWER9 machine check handler from stop state (Steve Best) [1368734]
+- [powerpc] 64s: Use alternative feature patching (Steve Best) [1368734]
+- [powerpc] 64s: Stop using bit in HSPRG0 to test winkle (Steve Best) [1368734]
+- [powerpc] 64s: Move remaining system reset idle code into idle_book3s.S (Steve Best) [1368734]
+- [powerpc] 64s: Remove unnecessary relocation branch from idle handler (Steve Best) [1368734]
+- [powerpc] powernv: Recover correct PACA on wakeup from a stop on P9 DD1 (Steve Best) [1368734]
+- [powerpc] 64s: POWER8 add missing machine check definitions (Steve Best) [1368734]
+- [powerpc] 64s: Data driven machine check handling (Steve Best) [1368734]
+- [powerpc] 64s: Data driven machine check evaluation (Steve Best) [1368734]
+- [powerpc] 64s: Move POWER machine check defines into mce_power.c (Steve Best) [1368734]
+- [powerpc] 64s: Clean up machine check recovery flushing (Steve Best) [1368734]
+- [powerpc] 64s: Machine check print NIP (Steve Best) [1368734]
+- [pci] MSI: pci-xgene-msi: Enable MSI support in ACPI boot for X-Gene v1 (Jonathan Toppins) [1445092]
+- [redhat] kconfig: Enable to assign a node which has only movable memory for power 9 (Steve Best) [1368719]
+- [redhat] config: aarch64: re-disable /dev/mem (Al Stone) [1456956]
+- [redhat] config: aarch64: re-disable /dev/port (Al Stone) [1456956]
+
 * Thu Jun 08 2017 Herton R. Krzesinski <herton@redhat.com> [4.11.0-7.el7]
 - [net] ipv6: fix out of bound writes in __ip6_append_data() (Hangbin Liu) [1459239] {CVE-2017-9242}
 - [rtc] interface: Validate alarm-time before handling rollover (Steve Best) [1440117]
