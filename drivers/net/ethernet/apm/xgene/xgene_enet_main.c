@@ -246,9 +246,9 @@ static int xgene_enet_tx_completion(struct xgene_enet_desc_ring *cp_ring,
 	skb_frag_t *frag;
 	dma_addr_t *frag_dma_addr;
 	u16 skb_index;
-	u8 status;
-	int i, ret = 0;
 	u8 mss_index;
+	u8 status;
+	int i;
 
 	skb_index = GET_VAL(USERINFO, le64_to_cpu(raw_desc->m0));
 	skb = cp_ring->cp_skb[skb_index];
@@ -275,19 +275,17 @@ static int xgene_enet_tx_completion(struct xgene_enet_desc_ring *cp_ring,
 	/* Checking for error */
 	status = GET_VAL(LERR, le64_to_cpu(raw_desc->m0));
 	if (unlikely(status > 2)) {
-		xgene_enet_parse_error(cp_ring, netdev_priv(cp_ring->ndev),
-				       status);
-		ret = -EIO;
+		cp_ring->tx_dropped++;
+		cp_ring->tx_errors++;
 	}
 
 	if (likely(skb)) {
 		dev_kfree_skb_any(skb);
 	} else {
 		netdev_err(cp_ring->ndev, "completion skb is NULL\n");
-		ret = -EIO;
 	}
 
-	return ret;
+	return 0;
 }
 
 static int xgene_enet_setup_mss(struct net_device *ndev, u32 mss)
@@ -601,14 +599,24 @@ static netdev_tx_t xgene_enet_start_xmit(struct sk_buff *skb,
 	return NETDEV_TX_OK;
 }
 
-static void xgene_enet_skip_csum(struct sk_buff *skb)
+static void xgene_enet_rx_csum(struct sk_buff *skb)
 {
+	struct net_device *ndev = skb->dev;
 	struct iphdr *iph = ip_hdr(skb);
 
-	if (!ip_is_fragment(iph) ||
-	    (iph->protocol != IPPROTO_TCP && iph->protocol != IPPROTO_UDP)) {
-		skb->ip_summed = CHECKSUM_UNNECESSARY;
-	}
+	if (!(ndev->features & NETIF_F_RXCSUM))
+		return;
+
+	if (skb->protocol != htons(ETH_P_IP))
+		return;
+
+	if (ip_is_fragment(iph))
+		return;
+
+	if (iph->protocol != IPPROTO_TCP && iph->protocol != IPPROTO_UDP)
+		return;
+
+	skb->ip_summed = CHECKSUM_UNNECESSARY;
 }
 
 static void xgene_enet_free_pagepool(struct xgene_enet_desc_ring *buf_pool,
@@ -648,12 +656,36 @@ static void xgene_enet_free_pagepool(struct xgene_enet_desc_ring *buf_pool,
 	buf_pool->head = head;
 }
 
+/* Errata 10GE_10 and ENET_15 - Fix duplicated HW statistic counters */
+static bool xgene_enet_errata_10GE_10(struct sk_buff *skb, u32 len, u8 status)
+{
+	if (status == INGRESS_CRC &&
+	    len >= (ETHER_STD_PACKET + 1) &&
+	    len <= (ETHER_STD_PACKET + 4) &&
+	    skb->protocol == htons(ETH_P_8021Q))
+		return true;
+
+	return false;
+}
+
+/* Errata 10GE_8 and ENET_11 - allow packet with length <=64B */
+static bool xgene_enet_errata_10GE_8(struct sk_buff *skb, u32 len, u8 status)
+{
+	if (status == INGRESS_PKT_LEN && len == ETHER_MIN_PACKET) {
+		if (ntohs(eth_hdr(skb)->h_proto) < 46)
+			return true;
+	}
+
+	return false;
+}
+
 static int xgene_enet_rx_frame(struct xgene_enet_desc_ring *rx_ring,
 			       struct xgene_enet_raw_desc *raw_desc,
 			       struct xgene_enet_raw_desc *exp_desc)
 {
 	struct xgene_enet_desc_ring *buf_pool, *page_pool;
 	u32 datalen, frag_size, skb_index;
+	struct xgene_enet_pdata *pdata;
 	struct net_device *ndev;
 	dma_addr_t dma_addr;
 	struct sk_buff *skb;
@@ -666,6 +698,7 @@ static int xgene_enet_rx_frame(struct xgene_enet_desc_ring *rx_ring,
 	bool nv;
 
 	ndev = rx_ring->ndev;
+	pdata = netdev_priv(ndev);
 	dev = ndev_to_dev(rx_ring->ndev);
 	buf_pool = rx_ring->buf_pool;
 	page_pool = rx_ring->page_pool;
@@ -676,30 +709,34 @@ static int xgene_enet_rx_frame(struct xgene_enet_desc_ring *rx_ring,
 	skb = buf_pool->rx_skb[skb_index];
 	buf_pool->rx_skb[skb_index] = NULL;
 
-	/* checking for error */
-	status = (GET_VAL(ELERR, le64_to_cpu(raw_desc->m0)) << LERR_LEN) ||
-		  GET_VAL(LERR, le64_to_cpu(raw_desc->m0));
-	if (unlikely(status > 2)) {
-		dev_kfree_skb_any(skb);
-		xgene_enet_free_pagepool(page_pool, raw_desc, exp_desc);
-		xgene_enet_parse_error(rx_ring, netdev_priv(rx_ring->ndev),
-				       status);
-		ret = -EIO;
-		goto out;
-	}
-
-	/* strip off CRC as HW isn't doing this */
 	datalen = xgene_enet_get_data_len(le64_to_cpu(raw_desc->m1));
-
-	nv = GET_VAL(NV, le64_to_cpu(raw_desc->m0));
-	if (!nv)
-		datalen -= 4;
-
 	skb_put(skb, datalen);
 	prefetch(skb->data - NET_IP_ALIGN);
+	skb->protocol = eth_type_trans(skb, ndev);
 
-	if (!nv)
+	/* checking for error */
+	status = (GET_VAL(ELERR, le64_to_cpu(raw_desc->m0)) << LERR_LEN) |
+		  GET_VAL(LERR, le64_to_cpu(raw_desc->m0));
+	if (unlikely(status)) {
+		if (xgene_enet_errata_10GE_8(skb, datalen, status)) {
+			pdata->false_rflr++;
+		} else if (xgene_enet_errata_10GE_10(skb, datalen, status)) {
+			pdata->vlan_rjbr++;
+		} else {
+			dev_kfree_skb_any(skb);
+			xgene_enet_free_pagepool(page_pool, raw_desc, exp_desc);
+			xgene_enet_parse_error(rx_ring, status);
+			rx_ring->rx_dropped++;
+			goto out;
+		}
+	}
+
+	nv = GET_VAL(NV, le64_to_cpu(raw_desc->m0));
+	if (!nv) {
+		/* strip off CRC as HW isn't doing this */
+		datalen -= 4;
 		goto skip_jumbo;
+	}
 
 	slots = page_pool->slots - 1;
 	head = page_pool->head;
@@ -728,11 +765,7 @@ static int xgene_enet_rx_frame(struct xgene_enet_desc_ring *rx_ring,
 
 skip_jumbo:
 	skb_checksum_none_assert(skb);
-	skb->protocol = eth_type_trans(skb, ndev);
-	if (likely((ndev->features & NETIF_F_IP_CSUM) &&
-		   skb->protocol == htons(ETH_P_IP))) {
-		xgene_enet_skip_csum(skb);
-	}
+	xgene_enet_rx_csum(skb);
 
 	rx_ring->rx_packets++;
 	rx_ring->rx_bytes += datalen;
@@ -1448,10 +1481,9 @@ err:
 
 static void xgene_enet_get_stats64(
 			struct net_device *ndev,
-			struct rtnl_link_stats64 *storage)
+			struct rtnl_link_stats64 *stats)
 {
 	struct xgene_enet_pdata *pdata = netdev_priv(ndev);
-	struct rtnl_link_stats64 *stats = &pdata->stats;
 	struct xgene_enet_desc_ring *ring;
 	int i;
 
@@ -1460,6 +1492,8 @@ static void xgene_enet_get_stats64(
 		if (ring) {
 			stats->tx_packets += ring->tx_packets;
 			stats->tx_bytes += ring->tx_bytes;
+			stats->tx_dropped += ring->tx_dropped;
+			stats->tx_errors += ring->tx_errors;
 		}
 	}
 
@@ -1468,14 +1502,18 @@ static void xgene_enet_get_stats64(
 		if (ring) {
 			stats->rx_packets += ring->rx_packets;
 			stats->rx_bytes += ring->rx_bytes;
-			stats->rx_errors += ring->rx_length_errors +
+			stats->rx_dropped += ring->rx_dropped;
+			stats->rx_errors += ring->rx_errors +
+				ring->rx_length_errors +
 				ring->rx_crc_errors +
 				ring->rx_frame_errors +
 				ring->rx_fifo_errors;
-			stats->rx_dropped += ring->rx_dropped;
+			stats->rx_length_errors += ring->rx_length_errors;
+			stats->rx_crc_errors += ring->rx_crc_errors;
+			stats->rx_frame_errors += ring->rx_frame_errors;
+			stats->rx_fifo_errors += ring->rx_fifo_errors;
 		}
 	}
-	memcpy(storage, stats, sizeof(struct rtnl_link_stats64));
 }
 
 static int xgene_enet_set_mac_address(struct net_device *ndev, void *addr)
@@ -1770,12 +1808,15 @@ static int xgene_enet_get_resources(struct xgene_enet_pdata *pdata)
 	if (pdata->phy_mode == PHY_INTERFACE_MODE_RGMII ||
 	    pdata->phy_mode == PHY_INTERFACE_MODE_SGMII) {
 		pdata->mcx_mac_addr = pdata->base_addr + BLOCK_ETH_MAC_OFFSET;
+		pdata->mcx_stats_addr =
+			pdata->base_addr + BLOCK_ETH_STATS_OFFSET;
 		offset = (pdata->enet_id == XGENE_ENET1) ?
 			  BLOCK_ETH_MAC_CSR_OFFSET :
 			  X2_BLOCK_ETH_MAC_CSR_OFFSET;
 		pdata->mcx_mac_csr_addr = base_addr + offset;
 	} else {
 		pdata->mcx_mac_addr = base_addr + BLOCK_AXG_MAC_OFFSET;
+		pdata->mcx_stats_addr = base_addr + BLOCK_AXG_STATS_OFFSET;
 		pdata->mcx_mac_csr_addr = base_addr + BLOCK_AXG_MAC_CSR_OFFSET;
 		pdata->pcs_addr = base_addr + BLOCK_PCS_OFFSET;
 	}
@@ -2037,9 +2078,10 @@ static int xgene_enet_probe(struct platform_device *pdev)
 		goto err;
 
 	xgene_enet_setup_ops(pdata);
+	spin_lock_init(&pdata->mac_lock);
 
 	if (pdata->phy_mode == PHY_INTERFACE_MODE_XGMII) {
-		ndev->features |= NETIF_F_TSO;
+		ndev->features |= NETIF_F_TSO | NETIF_F_RXCSUM;
 		spin_lock_init(&pdata->mss_lock);
 	}
 	ndev->hw_features = ndev->features;
@@ -2066,6 +2108,11 @@ static int xgene_enet_probe(struct platform_device *pdev)
 		if (ret)
 			goto err1;
 	}
+
+	spin_lock_init(&pdata->stats_lock);
+	ret = xgene_extd_stats_init(pdata);
+	if (ret)
+		goto err2;
 
 	xgene_enet_napi_add(pdata);
 	ret = register_netdev(ndev);
@@ -2112,8 +2159,8 @@ static int xgene_enet_remove(struct platform_device *pdev)
 		xgene_enet_mdio_remove(pdata);
 
 	unregister_netdev(ndev);
-	pdata->port_ops->shutdown(pdata);
 	xgene_enet_delete_desc_rings(pdata);
+	pdata->port_ops->shutdown(pdata);
 	free_netdev(ndev);
 
 	return 0;

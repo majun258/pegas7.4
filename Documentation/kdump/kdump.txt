@@ -306,9 +306,10 @@ physical memory present in the system. Currently dump filtering utility
 (makedumpfile) requires 2bits per 4K page of memory in its user space. So
 memory reserved is scaled accordingly. That means on top of 128MB, we reserve
 additional 2bit per 4K page of physical memory in the system.
-Many of the ARM64 systems has been found failing even with 1G of memory.
-Therefore, currently 2G memory is allocated for 'auto'. It need to be
-OPTIMIZED.
+ARM64 systems work fine with 512M of memory, because we pass
+nr_cpus=1,swiotlb=noforce,cma=0 in crash kernel command line from
+kexec-tools now. Therefore, we allocate 512M of memory for crashkernel in case
+of 'auto' on ARM64.
 
 It will be 128M or 256M on ppc, 128M on s390x, 1/32 of your physical memory
 size on ppc64 (but it will not grow if you have more than 128G memory).

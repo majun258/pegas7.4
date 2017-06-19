@@ -153,9 +153,9 @@ static const struct arm64_ftr_bits ftr_ctr[] = {
 	/*
 	 * Linux can handle differing I-cache policies. Userspace JITs will
 	 * make use of *minLine.
-	 * If we have differing I-cache policies, report it as the weakest - AIVIVT.
+	 * If we have differing I-cache policies, report it as the weakest - VIPT.
 	 */
-	ARM64_FTR_BITS(FTR_VISIBLE, FTR_NONSTRICT, FTR_EXACT, 14, 2, ICACHE_POLICY_AIVIVT),	/* L1Ip */
+	ARM64_FTR_BITS(FTR_VISIBLE, FTR_NONSTRICT, FTR_EXACT, 14, 2, ICACHE_POLICY_VIPT),	/* L1Ip */
 	ARM64_FTR_BITS(FTR_VISIBLE, FTR_STRICT, FTR_LOWER_SAFE, 0, 4, 0),	/* IminLine */
 	ARM64_FTR_END,
 };
@@ -585,7 +585,7 @@ void update_cpu_features(int cpu,
 	 * If we have AArch32, we care about 32-bit features for compat.
 	 * If the system doesn't support AArch32, don't update them.
 	 */
-	if (id_aa64pfr0_32bit_el0(read_system_reg(SYS_ID_AA64PFR0_EL1)) &&
+	if (id_aa64pfr0_32bit_el0(read_sanitised_ftr_reg(SYS_ID_AA64PFR0_EL1)) &&
 		id_aa64pfr0_32bit_el0(info->reg_id_aa64pfr0)) {
 
 		taint |= check_update_ftr_reg(SYS_ID_DFR0_EL1, cpu,
@@ -636,7 +636,7 @@ void update_cpu_features(int cpu,
 			"Unsupported CPU feature variation.\n");
 }
 
-u64 read_system_reg(u32 id)
+u64 read_sanitised_ftr_reg(u32 id)
 {
 	struct arm64_ftr_reg *regp = get_arm64_ftr_reg(id);
 
@@ -649,10 +649,10 @@ u64 read_system_reg(u32 id)
 	case r:		return read_sysreg_s(r)
 
 /*
- * __raw_read_system_reg() - Used by a STARTING cpu before cpuinfo is populated.
+ * __read_sysreg_by_encoding() - Used by a STARTING cpu before cpuinfo is populated.
  * Read the system register on the current CPU
  */
-static u64 __raw_read_system_reg(u32 sys_id)
+static u64 __read_sysreg_by_encoding(u32 sys_id)
 {
 	switch (sys_id) {
 	read_sysreg_case(SYS_ID_PFR0_EL1);
@@ -709,9 +709,9 @@ has_cpuid_feature(const struct arm64_cpu_capabilities *entry, int scope)
 
 	WARN_ON(scope == SCOPE_LOCAL_CPU && preemptible());
 	if (scope == SCOPE_SYSTEM)
-		val = read_system_reg(entry->sys_reg);
+		val = read_sanitised_ftr_reg(entry->sys_reg);
 	else
-		val = __raw_read_system_reg(entry->sys_reg);
+		val = __read_sysreg_by_encoding(entry->sys_reg);
 
 	return feature_matches(val, entry);
 }
@@ -761,7 +761,7 @@ static bool hyp_offset_low(const struct arm64_cpu_capabilities *entry,
 
 static bool has_no_fpsimd(const struct arm64_cpu_capabilities *entry, int __unused)
 {
-	u64 pfr0 = read_system_reg(SYS_ID_AA64PFR0_EL1);
+	u64 pfr0 = read_sanitised_ftr_reg(SYS_ID_AA64PFR0_EL1);
 
 	return cpuid_feature_extract_signed_field(pfr0,
 					ID_AA64PFR0_FP_SHIFT) < 0;
@@ -1090,18 +1090,27 @@ static void __init setup_feature_capabilities(void)
  * Check if the current CPU has a given feature capability.
  * Should be called from non-preemptible context.
  */
-bool this_cpu_has_cap(unsigned int cap)
+static bool __this_cpu_has_cap(const struct arm64_cpu_capabilities *cap_array,
+			       unsigned int cap)
 {
 	const struct arm64_cpu_capabilities *caps;
 
 	if (WARN_ON(preemptible()))
 		return false;
 
-	for (caps = arm64_features; caps->desc; caps++)
+	for (caps = cap_array; caps->desc; caps++)
 		if (caps->capability == cap && caps->matches)
 			return caps->matches(caps, SCOPE_LOCAL_CPU);
 
 	return false;
+}
+
+extern const struct arm64_cpu_capabilities arm64_errata[];
+
+bool this_cpu_has_cap(unsigned int cap)
+{
+	return (__this_cpu_has_cap(arm64_features, cap) ||
+		__this_cpu_has_cap(arm64_errata, cap));
 }
 
 void __init setup_cpu_features(void)

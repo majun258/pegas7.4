@@ -9,7 +9,7 @@ RHDISTGIT_USER:="$(shell whoami)"
 # have a faster storage
 RHDISTGIT_TMP:=/tmp
 # Branch it should be switched into
-RHDISTGIT_BRANCH:=pegas-rhel-${RHELMAJOR}.${RHELMINOR}
+RHDISTGIT_BRANCH:=rhel-alt-${RHELMAJOR}.${RHELMINOR}
 
 # load configuration, starting with home directory then local
 ifeq ("$(RHDISTGIT_CACHE)", "")

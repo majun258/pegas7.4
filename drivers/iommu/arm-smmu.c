@@ -418,6 +418,7 @@ enum arm_smmu_domain_stage {
 	ARM_SMMU_DOMAIN_S1 = 0,
 	ARM_SMMU_DOMAIN_S2,
 	ARM_SMMU_DOMAIN_NESTED,
+	ARM_SMMU_DOMAIN_BYPASS,
 };
 
 struct arm_smmu_domain {
@@ -843,6 +844,12 @@ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
 	if (smmu_domain->smmu)
 		goto out_unlock;
 
+	if (domain->type == IOMMU_DOMAIN_IDENTITY) {
+		smmu_domain->stage = ARM_SMMU_DOMAIN_BYPASS;
+		smmu_domain->smmu = smmu;
+		goto out_unlock;
+	}
+
 	/*
 	 * Mapping the requested stage onto what we support is surprisingly
 	 * complicated, mainly because the spec allows S1+S2 SMMUs without
@@ -1003,7 +1010,7 @@ static void arm_smmu_destroy_domain_context(struct iommu_domain *domain)
 	void __iomem *cb_base;
 	int irq;
 
-	if (!smmu)
+	if (!smmu || domain->type == IOMMU_DOMAIN_IDENTITY)
 		return;
 
 	/*
@@ -1026,7 +1033,9 @@ static struct iommu_domain *arm_smmu_domain_alloc(unsigned type)
 {
 	struct arm_smmu_domain *smmu_domain;
 
-	if (type != IOMMU_DOMAIN_UNMANAGED && type != IOMMU_DOMAIN_DMA)
+	if (type != IOMMU_DOMAIN_UNMANAGED &&
+	    type != IOMMU_DOMAIN_DMA &&
+	    type != IOMMU_DOMAIN_IDENTITY)
 		return NULL;
 	/*
 	 * Allocate the domain and initialise some of its data structures.
@@ -1255,9 +1264,14 @@ static int arm_smmu_domain_add_master(struct arm_smmu_domain *smmu_domain,
 {
 	struct arm_smmu_device *smmu = smmu_domain->smmu;
 	struct arm_smmu_s2cr *s2cr = smmu->s2crs;
-	enum arm_smmu_s2cr_type type = S2CR_TYPE_TRANS;
 	u8 cbndx = smmu_domain->cfg.cbndx;
+	enum arm_smmu_s2cr_type type;
 	int i, idx;
+
+	if (smmu_domain->stage == ARM_SMMU_DOMAIN_BYPASS)
+		type = S2CR_TYPE_BYPASS;
+	else
+		type = S2CR_TYPE_TRANS;
 
 	for_each_cfg_sme(fwspec, i, idx) {
 		if (type == s2cr[idx].type && cbndx == s2cr[idx].cbndx)
@@ -1395,6 +1409,9 @@ static phys_addr_t arm_smmu_iova_to_phys(struct iommu_domain *domain,
 	unsigned long flags;
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
 	struct io_pgtable_ops *ops= smmu_domain->pgtbl_ops;
+
+	if (domain->type == IOMMU_DOMAIN_IDENTITY)
+		return iova;
 
 	if (!ops)
 		return 0;
@@ -1554,6 +1571,9 @@ static int arm_smmu_domain_get_attr(struct iommu_domain *domain,
 {
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
 
+	if (domain->type != IOMMU_DOMAIN_UNMANAGED)
+		return -EINVAL;
+
 	switch (attr) {
 	case DOMAIN_ATTR_NESTING:
 		*(int *)data = (smmu_domain->stage == ARM_SMMU_DOMAIN_NESTED);
@@ -1568,6 +1588,9 @@ static int arm_smmu_domain_set_attr(struct iommu_domain *domain,
 {
 	int ret = 0;
 	struct arm_smmu_domain *smmu_domain = to_smmu_domain(domain);
+
+	if (domain->type != IOMMU_DOMAIN_UNMANAGED)
+		return -EINVAL;
 
 	mutex_lock(&smmu_domain->init_mutex);
 
@@ -2099,6 +2122,23 @@ static int arm_smmu_device_dt_probe(struct platform_device *pdev,
 	return 0;
 }
 
+static void arm_smmu_bus_init(void)
+{
+	/* Oh, for a proper bus abstraction */
+	if (!iommu_present(&platform_bus_type))
+		bus_set_iommu(&platform_bus_type, &arm_smmu_ops);
+#ifdef CONFIG_ARM_AMBA
+	if (!iommu_present(&amba_bustype))
+		bus_set_iommu(&amba_bustype, &arm_smmu_ops);
+#endif
+#ifdef CONFIG_PCI
+	if (!iommu_present(&pci_bus_type)) {
+		pci_request_acs();
+		bus_set_iommu(&pci_bus_type, &arm_smmu_ops);
+	}
+#endif
+}
+
 static int arm_smmu_device_probe(struct platform_device *pdev)
 {
 	struct resource *res;
@@ -2204,21 +2244,30 @@ static int arm_smmu_device_probe(struct platform_device *pdev)
 	arm_smmu_device_reset(smmu);
 	arm_smmu_test_smr_masks(smmu);
 
-	/* Oh, for a proper bus abstraction */
-	if (!iommu_present(&platform_bus_type))
-		bus_set_iommu(&platform_bus_type, &arm_smmu_ops);
-#ifdef CONFIG_ARM_AMBA
-	if (!iommu_present(&amba_bustype))
-		bus_set_iommu(&amba_bustype, &arm_smmu_ops);
-#endif
-#ifdef CONFIG_PCI
-	if (!iommu_present(&pci_bus_type)) {
-		pci_request_acs();
-		bus_set_iommu(&pci_bus_type, &arm_smmu_ops);
-	}
-#endif
+	/*
+	 * For ACPI and generic DT bindings, an SMMU will be probed before
+	 * any device which might need it, so we want the bus ops in place
+	 * ready to handle default domain setup as soon as any SMMU exists.
+	 */
+	if (!using_legacy_binding)
+		arm_smmu_bus_init();
+
 	return 0;
 }
+
+/*
+ * With the legacy DT binding in play, though, we have no guarantees about
+ * probe order, but then we're also not doing default domains, so we can
+ * delay setting bus ops until we're sure every possible SMMU is ready,
+ * and that way ensure that no add_device() calls get missed.
+ */
+static int arm_smmu_legacy_bus_init(void)
+{
+	if (using_legacy_binding)
+		arm_smmu_bus_init();
+	return 0;
+}
+device_initcall_sync(arm_smmu_legacy_bus_init);
 
 static int arm_smmu_device_remove(struct platform_device *pdev)
 {
@@ -2243,56 +2292,14 @@ static struct platform_driver arm_smmu_driver = {
 	.probe	= arm_smmu_device_probe,
 	.remove	= arm_smmu_device_remove,
 };
+module_platform_driver(arm_smmu_driver);
 
-static int __init arm_smmu_init(void)
-{
-	static bool registered;
-	int ret = 0;
-
-	if (!registered) {
-		ret = platform_driver_register(&arm_smmu_driver);
-		registered = !ret;
-	}
-	return ret;
-}
-
-static void __exit arm_smmu_exit(void)
-{
-	return platform_driver_unregister(&arm_smmu_driver);
-}
-
-subsys_initcall(arm_smmu_init);
-module_exit(arm_smmu_exit);
-
-static int __init arm_smmu_of_init(struct device_node *np)
-{
-	int ret = arm_smmu_init();
-
-	if (ret)
-		return ret;
-
-	if (!of_platform_device_create(np, NULL, platform_bus_type.dev_root))
-		return -ENODEV;
-
-	return 0;
-}
-IOMMU_OF_DECLARE(arm_smmuv1, "arm,smmu-v1", arm_smmu_of_init);
-IOMMU_OF_DECLARE(arm_smmuv2, "arm,smmu-v2", arm_smmu_of_init);
-IOMMU_OF_DECLARE(arm_mmu400, "arm,mmu-400", arm_smmu_of_init);
-IOMMU_OF_DECLARE(arm_mmu401, "arm,mmu-401", arm_smmu_of_init);
-IOMMU_OF_DECLARE(arm_mmu500, "arm,mmu-500", arm_smmu_of_init);
-IOMMU_OF_DECLARE(cavium_smmuv2, "cavium,smmu-v2", arm_smmu_of_init);
-
-#ifdef CONFIG_ACPI
-static int __init arm_smmu_acpi_init(struct acpi_table_header *table)
-{
-	if (iort_node_match(ACPI_IORT_NODE_SMMU))
-		return arm_smmu_init();
-
-	return 0;
-}
-IORT_ACPI_DECLARE(arm_smmu, ACPI_SIG_IORT, arm_smmu_acpi_init);
-#endif
+IOMMU_OF_DECLARE(arm_smmuv1, "arm,smmu-v1", NULL);
+IOMMU_OF_DECLARE(arm_smmuv2, "arm,smmu-v2", NULL);
+IOMMU_OF_DECLARE(arm_mmu400, "arm,mmu-400", NULL);
+IOMMU_OF_DECLARE(arm_mmu401, "arm,mmu-401", NULL);
+IOMMU_OF_DECLARE(arm_mmu500, "arm,mmu-500", NULL);
+IOMMU_OF_DECLARE(cavium_smmuv2, "cavium,smmu-v2", NULL);
 
 MODULE_DESCRIPTION("IOMMU API for ARM architected SMMU implementations");
 MODULE_AUTHOR("Will Deacon <will.deacon@arm.com>");

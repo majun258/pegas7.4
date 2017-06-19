@@ -32,11 +32,11 @@ extern const unsigned long arm64_relocate_new_kernel_size;
 unsigned long long __init arch_default_crash_size(unsigned long long total_size)
 {
 	/*
-	 * Some of the system had failed in past even with 1G of
-	 * allocation. So still keeping it fixed at 2G as a safer size. It
-	 * need to be OPTIMIZED.
-	*/
-	return SZ_2G;
+	 * ARM64 systems work fine with 512M of memory, because we pass
+	 * nr_cpus=1,swiotlb=noforce,cma=0 in crash kernel command line from
+	 * kexec-tools now.
+	 */
+	return SZ_512M;
 }
 
 /**

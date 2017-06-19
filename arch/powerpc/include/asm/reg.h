@@ -365,6 +365,7 @@
 #define   LPCR_MER_SH		11
 #define	  LPCR_GTSE		ASM_CONST(0x0000000000000400)  	/* Guest Translation Shootdown Enable */
 #define   LPCR_TC		ASM_CONST(0x0000000000000200)	/* Translation control */
+#define   LPCR_HEIC		ASM_CONST(0x0000000000000010)   /* Hypervisor External Interrupt Control */
 #define   LPCR_LPES		0x0000000c
 #define   LPCR_LPES0		ASM_CONST(0x0000000000000008)      /* LPAR Env selector 0 */
 #define   LPCR_LPES1		ASM_CONST(0x0000000000000004)      /* LPAR Env selector 1 */
@@ -656,6 +657,7 @@
 #define   SRR1_ISI_PROT		0x08000000 /* ISI: Other protection fault */
 #define   SRR1_WAKEMASK		0x00380000 /* reason for wakeup */
 #define   SRR1_WAKEMASK_P8	0x003c0000 /* reason for wakeup on POWER8 and 9 */
+#define   SRR1_WAKEMCE_RESVD	0x003c0000 /* Unused/reserved value used by MCE wakeup to indicate cause to idle wakeup handler */
 #define   SRR1_WAKESYSERR	0x00300000 /* System error */
 #define   SRR1_WAKEEE		0x00200000 /* External interrupt */
 #define   SRR1_WAKEHVI		0x00240000 /* Hypervisor Virtualization Interrupt (P9) */

@@ -33,6 +33,7 @@
 #define ARMV8_PMU_PMCR_DP	(1 << 5) /* Disable CCNT if non-invasive debug*/
 #define ARMV8_PMU_PMCR_LC	(1 << 6) /* Overflow on 64 bit cycle counter */
 #define	ARMV8_PMU_PMCR_N_SHIFT	11	 /* Number of counters supported */
+#define	ARMV8_PMU_PMCR_IMP_SHIFT 24      /* Implementer code */
 #define	ARMV8_PMU_PMCR_N_MASK	0x1f
 #define	ARMV8_PMU_PMCR_MASK	0x7f	 /* Mask for writable bits */
 

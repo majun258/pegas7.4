@@ -1,1 +1,1 @@
-# CONFIG_SPI_QUP is not set
+CONFIG_SPI_QUP=y

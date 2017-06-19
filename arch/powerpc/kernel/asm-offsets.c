@@ -630,6 +630,8 @@ int main(void)
 	HSTATE_FIELD(HSTATE_KVM_VCPU, kvm_vcpu);
 	HSTATE_FIELD(HSTATE_KVM_VCORE, kvm_vcore);
 	HSTATE_FIELD(HSTATE_XICS_PHYS, xics_phys);
+	HSTATE_FIELD(HSTATE_XIVE_TIMA_PHYS, xive_tima_phys);
+	HSTATE_FIELD(HSTATE_XIVE_TIMA_VIRT, xive_tima_virt);
 	HSTATE_FIELD(HSTATE_SAVED_XIRR, saved_xirr);
 	HSTATE_FIELD(HSTATE_HOST_IPI, host_ipi);
 	HSTATE_FIELD(HSTATE_PTID, ptid);
@@ -715,6 +717,14 @@ int main(void)
 	OFFSET(VCPU_HOST_MAS6, kvm_vcpu, arch.host_mas6);
 #endif
 
+#ifdef CONFIG_KVM_XICS
+	DEFINE(VCPU_XIVE_SAVED_STATE, offsetof(struct kvm_vcpu,
+					       arch.xive_saved_state));
+	DEFINE(VCPU_XIVE_CAM_WORD, offsetof(struct kvm_vcpu,
+					    arch.xive_cam_word));
+	DEFINE(VCPU_XIVE_PUSHED, offsetof(struct kvm_vcpu, arch.xive_pushed));
+#endif
+
 #ifdef CONFIG_KVM_EXIT_TIMING
 	OFFSET(VCPU_TIMING_EXIT_TBU, kvm_vcpu, arch.timing_exit.tv32.tbu);
 	OFFSET(VCPU_TIMING_EXIT_TBL, kvm_vcpu, arch.timing_exit.tv32.tbl);
@@ -727,6 +737,7 @@ int main(void)
 	OFFSET(PACA_THREAD_IDLE_STATE, paca_struct, thread_idle_state);
 	OFFSET(PACA_THREAD_MASK, paca_struct, thread_mask);
 	OFFSET(PACA_SUBCORE_SIBLING_MASK, paca_struct, subcore_sibling_mask);
+	OFFSET(PACA_SIBLING_PACA_PTRS, paca_struct, thread_sibling_pacas);
 #endif
 
 	DEFINE(PPC_DBELL_SERVER, PPC_DBELL_SERVER);

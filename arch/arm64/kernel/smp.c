@@ -436,6 +436,7 @@ void __init smp_cpus_done(unsigned int max_cpus)
 	setup_cpu_features();
 	hyp_mode_check();
 	apply_alternatives_all();
+	mark_linear_text_alias_ro();
 }
 
 void __init smp_prepare_boot_cpu(void)
@@ -520,6 +521,13 @@ static bool bootcpu_valid __initdata;
 static unsigned int cpu_count = 1;
 
 #ifdef CONFIG_ACPI
+static struct acpi_madt_generic_interrupt cpu_madt_gicc[NR_CPUS];
+
+struct acpi_madt_generic_interrupt *acpi_cpu_get_madt_gicc(int cpu)
+{
+	return &cpu_madt_gicc[cpu];
+}
+
 /*
  * acpi_map_gic_cpu_interface - parse processor MADT entry
  *
@@ -554,6 +562,7 @@ acpi_map_gic_cpu_interface(struct acpi_madt_generic_interrupt *processor)
 			return;
 		}
 		bootcpu_valid = true;
+		cpu_madt_gicc[0] = *processor;
 		early_map_cpu_to_node(0, acpi_numa_get_nid(0, hwid));
 		return;
 	}
@@ -563,6 +572,8 @@ acpi_map_gic_cpu_interface(struct acpi_madt_generic_interrupt *processor)
 
 	/* map the logical cpu id to cpu MPIDR */
 	cpu_logical_map(cpu_count) = hwid;
+
+	cpu_madt_gicc[cpu_count] = *processor;
 
 	/*
 	 * Set-up the ACPI parking protocol cpu entries

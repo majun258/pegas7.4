@@ -37,6 +37,12 @@
 static struct kset *iommu_group_kset;
 static DEFINE_IDA(iommu_group_ida);
 
+#ifdef CONFIG_ARM64
+static unsigned int iommu_def_domain_type = IOMMU_DOMAIN_IDENTITY;
+#else
+static unsigned int iommu_def_domain_type = IOMMU_DOMAIN_DMA;
+#endif
+
 struct iommu_callback_data {
 	const struct iommu_ops *ops;
 };
@@ -111,6 +117,18 @@ static int __iommu_attach_group(struct iommu_domain *domain,
 				struct iommu_group *group);
 static void __iommu_detach_group(struct iommu_domain *domain,
 				 struct iommu_group *group);
+
+static int __init iommu_set_def_domain_type(char *str)
+{
+	bool pt;
+
+	if (!str || strtobool(str, &pt))
+		return -EINVAL;
+
+	iommu_def_domain_type = pt ? IOMMU_DOMAIN_IDENTITY : IOMMU_DOMAIN_DMA;
+	return 0;
+}
+early_param("iommu.passthrough", iommu_set_def_domain_type);
 
 static ssize_t iommu_group_attr_show(struct kobject *kobj,
 				     struct attribute *__attr, char *buf)
@@ -586,7 +604,9 @@ rename:
 
 	trace_add_device_to_group(group->id, dev);
 
-	pr_info("Adding device %s to group %d\n", dev_name(dev), group->id);
+	pr_info("Adding device %s to group %d, default domain type %d\n",
+		dev_name(dev), group->id,
+		group->default_domain ? group->default_domain->type : -1);
 
 	return 0;
 
@@ -1015,10 +1035,19 @@ struct iommu_group *iommu_group_get_for_dev(struct device *dev)
 	 * IOMMU driver.
 	 */
 	if (!group->default_domain) {
-		group->default_domain = __iommu_domain_alloc(dev->bus,
-							     IOMMU_DOMAIN_DMA);
+		struct iommu_domain *dom;
+
+		dom = __iommu_domain_alloc(dev->bus, iommu_def_domain_type);
+		if (!dom && iommu_def_domain_type != IOMMU_DOMAIN_DMA) {
+			dev_warn(dev,
+				 "failed to allocate default IOMMU domain of type %u; falling back to IOMMU_DOMAIN_DMA",
+				 iommu_def_domain_type);
+			dom = __iommu_domain_alloc(dev->bus, IOMMU_DOMAIN_DMA);
+		}
+
+		group->default_domain = dom;
 		if (!group->domain)
-			group->domain = group->default_domain;
+			group->domain = dom;
 	}
 
 	ret = iommu_group_add_device(group, dev);

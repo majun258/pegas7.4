@@ -490,6 +490,17 @@ static inline struct kvm_vcpu *kvm_get_vcpu_by_id(struct kvm *kvm, int id)
 	return NULL;
 }
 
+static inline int kvm_vcpu_get_idx(struct kvm_vcpu *vcpu)
+{
+	struct kvm_vcpu *tmp;
+	int idx;
+
+	kvm_for_each_vcpu(idx, tmp, vcpu->kvm)
+		if (tmp == vcpu)
+			return idx;
+	BUG();
+}
+
 #define kvm_for_each_memslot(memslot, slots)	\
 	for (memslot = &slots->memslots[0];	\
 	      memslot < slots->memslots + KVM_MEM_SLOTS_NUM && memslot->npages;\
@@ -641,18 +652,18 @@ int kvm_read_guest_page(struct kvm *kvm, gfn_t gfn, void *data, int offset,
 int kvm_read_guest_atomic(struct kvm *kvm, gpa_t gpa, void *data,
 			  unsigned long len);
 int kvm_read_guest(struct kvm *kvm, gpa_t gpa, void *data, unsigned long len);
-int kvm_vcpu_read_guest_cached(struct kvm_vcpu *vcpu, struct gfn_to_hva_cache *ghc,
-			       void *data, unsigned long len);
+int kvm_read_guest_cached(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
+			   void *data, unsigned long len);
 int kvm_write_guest_page(struct kvm *kvm, gfn_t gfn, const void *data,
 			 int offset, int len);
 int kvm_write_guest(struct kvm *kvm, gpa_t gpa, const void *data,
 		    unsigned long len);
-int kvm_vcpu_write_guest_cached(struct kvm_vcpu *v, struct gfn_to_hva_cache *ghc,
-				void *data, unsigned long len);
-int kvm_vcpu_write_guest_offset_cached(struct kvm_vcpu *v, struct gfn_to_hva_cache *ghc,
-				       void *data, int offset, unsigned long len);
-int kvm_vcpu_gfn_to_hva_cache_init(struct kvm_vcpu *v, struct gfn_to_hva_cache *ghc,
-				   gpa_t gpa, unsigned long len);
+int kvm_write_guest_cached(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
+			   void *data, unsigned long len);
+int kvm_write_guest_offset_cached(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
+			   void *data, int offset, unsigned long len);
+int kvm_gfn_to_hva_cache_init(struct kvm *kvm, struct gfn_to_hva_cache *ghc,
+			      gpa_t gpa, unsigned long len);
 int kvm_clear_guest_page(struct kvm *kvm, gfn_t gfn, int offset, int len);
 int kvm_clear_guest(struct kvm *kvm, gpa_t gpa, unsigned long len);
 struct kvm_memory_slot *gfn_to_memslot(struct kvm *kvm, gfn_t gfn);
@@ -1165,7 +1176,6 @@ int kvm_register_device_ops(struct kvm_device_ops *ops, u32 type);
 void kvm_unregister_device_ops(u32 type);
 
 extern struct kvm_device_ops kvm_mpic_ops;
-extern struct kvm_device_ops kvm_xics_ops;
 extern struct kvm_device_ops kvm_arm_vgic_v2_ops;
 extern struct kvm_device_ops kvm_arm_vgic_v3_ops;
 

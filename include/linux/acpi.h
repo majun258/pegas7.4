@@ -595,6 +595,13 @@ enum acpi_reconfig_event  {
 int acpi_reconfig_notifier_register(struct notifier_block *nb);
 int acpi_reconfig_notifier_unregister(struct notifier_block *nb);
 
+#ifdef CONFIG_ACPI_GTDT
+int acpi_gtdt_init(struct acpi_table_header *table, int *platform_timer_count);
+int acpi_gtdt_map_ppi(int type);
+bool acpi_gtdt_c3stop(int type);
+int acpi_arch_timer_mem_init(struct arch_timer_mem *timer_mem, int *timer_count);
+#endif
+
 #else	/* !CONFIG_ACPI */
 
 #define acpi_disabled 1
@@ -762,8 +769,11 @@ static inline enum dev_dma_attr acpi_get_dma_attr(struct acpi_device *adev)
 	return DEV_DMA_NOT_SUPPORTED;
 }
 
-static inline void acpi_dma_configure(struct device *dev,
-				      enum dev_dma_attr attr) { }
+static inline int acpi_dma_configure(struct device *dev,
+				     enum dev_dma_attr attr)
+{
+	return 0;
+}
 
 static inline void acpi_dma_deconfigure(struct device *dev) { }
 

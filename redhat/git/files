@@ -1,4 +1,4 @@
-kernel-pegas.spec
+kernel-alt.spec
 check-kabi
 extra_certificates
 x509.genkey
@@ -17,12 +17,12 @@ Module.kabi_aarch64
 Module.kabi_ppc64le
 Module.kabi_s390x
 Module.kabi_x86_64
-kernel-pegas-4.11.0-aarch64-debug.config
-kernel-pegas-4.11.0-aarch64.config
-kernel-pegas-4.11.0-ppc64le-debug.config
-kernel-pegas-4.11.0-ppc64le.config
-kernel-pegas-4.11.0-s390x.config
-kernel-pegas-4.11.0-s390x-debug.config
-kernel-pegas-4.11.0-s390x-kdump.config
-kernel-pegas-4.11.0-x86_64-debug.config
-kernel-pegas-4.11.0-x86_64.config
+kernel-alt-4.11.0-aarch64-debug.config
+kernel-alt-4.11.0-aarch64.config
+kernel-alt-4.11.0-ppc64le-debug.config
+kernel-alt-4.11.0-ppc64le.config
+kernel-alt-4.11.0-s390x.config
+kernel-alt-4.11.0-s390x-debug.config
+kernel-alt-4.11.0-s390x-kdump.config
+kernel-alt-4.11.0-x86_64-debug.config
+kernel-alt-4.11.0-x86_64.config

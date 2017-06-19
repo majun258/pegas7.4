@@ -2487,13 +2487,15 @@ static int i40e_change_mtu(struct net_device *netdev, int new_mtu)
 {
 	struct i40e_netdev_priv *np = netdev_priv(netdev);
 	struct i40e_vsi *vsi = np->vsi;
+	struct i40e_pf *pf = vsi->back;
 
 	netdev_info(netdev, "changing MTU from %d to %d\n",
 		    netdev->mtu, new_mtu);
 	netdev->mtu = new_mtu;
 	if (netif_running(netdev))
 		i40e_vsi_reinit_locked(vsi);
-	i40e_notify_client_of_l2_param_changes(vsi);
+	pf->flags |= (I40E_FLAG_SERVICE_CLIENT_REQUESTED |
+		      I40E_FLAG_CLIENT_L2_CHANGE);
 	return 0;
 }
 
@@ -4471,17 +4473,16 @@ static void i40e_napi_disable_all(struct i40e_vsi *vsi)
  **/
 static void i40e_vsi_close(struct i40e_vsi *vsi)
 {
-	bool reset = false;
-
+	struct i40e_pf *pf = vsi->back;
 	if (!test_and_set_bit(__I40E_DOWN, &vsi->state))
 		i40e_down(vsi);
 	i40e_vsi_free_irq(vsi);
 	i40e_vsi_free_tx_resources(vsi);
 	i40e_vsi_free_rx_resources(vsi);
 	vsi->current_netdev_flags = 0;
-	if (test_bit(__I40E_RESET_RECOVERY_PENDING, &vsi->back->state))
-		reset = true;
-	i40e_notify_client_of_netdev_close(vsi, reset);
+	pf->flags |= I40E_FLAG_SERVICE_CLIENT_REQUESTED;
+	if (test_bit(__I40E_RESET_RECOVERY_PENDING, &pf->state))
+		pf->flags |=  I40E_FLAG_CLIENT_RESET;
 }
 
 /**
@@ -5550,8 +5551,6 @@ void i40e_down(struct i40e_vsi *vsi)
 		i40e_clean_rx_ring(vsi->rx_rings[i]);
 	}
 
-	i40e_notify_client_of_netdev_close(vsi, false);
-
 }
 
 /**
@@ -6029,8 +6028,8 @@ static int i40e_handle_lldp_event(struct i40e_pf *pf,
 		i40e_service_event_schedule(pf);
 	} else {
 		i40e_pf_unquiesce_all_vsi(pf);
-		/* Notify the client for the DCB changes */
-		i40e_notify_client_of_l2_param_changes(pf->vsi[pf->lan_vsi]);
+	pf->flags |= (I40E_FLAG_SERVICE_CLIENT_REQUESTED |
+		      I40E_FLAG_CLIENT_L2_CHANGE);
 	}
 
 exit:
@@ -7419,7 +7418,18 @@ static void i40e_service_task(struct work_struct *work)
 	i40e_vc_process_vflr_event(pf);
 	i40e_watchdog_subtask(pf);
 	i40e_fdir_reinit_subtask(pf);
-	i40e_client_subtask(pf);
+	if (pf->flags & I40E_FLAG_CLIENT_RESET) {
+		/* Client subtask will reopen next time through. */
+		i40e_notify_client_of_netdev_close(pf->vsi[pf->lan_vsi], true);
+		pf->flags &= ~I40E_FLAG_CLIENT_RESET;
+	} else {
+		i40e_client_subtask(pf);
+		if (pf->flags & I40E_FLAG_CLIENT_L2_CHANGE) {
+			i40e_notify_client_of_l2_param_changes(
+							pf->vsi[pf->lan_vsi]);
+			pf->flags &= ~I40E_FLAG_CLIENT_L2_CHANGE;
+		}
+	}
 	i40e_sync_filters_subtask(pf);
 	i40e_sync_udp_filters_subtask(pf);
 	i40e_clean_adminq_subtask(pf);
@@ -8368,13 +8378,10 @@ static int i40e_config_rss_reg(struct i40e_vsi *vsi, const u8 *seed,
 
 		if (vsi->type == I40E_VSI_MAIN) {
 			for (i = 0; i <= I40E_PFQF_HKEY_MAX_INDEX; i++)
-				i40e_write_rx_ctl(hw, I40E_PFQF_HKEY(i),
-						  seed_dw[i]);
+				wr32(hw, I40E_PFQF_HKEY(i), seed_dw[i]);
 		} else if (vsi->type == I40E_VSI_SRIOV) {
 			for (i = 0; i <= I40E_VFQF_HKEY1_MAX_INDEX; i++)
-				i40e_write_rx_ctl(hw,
-						  I40E_VFQF_HKEY1(i, vf_id),
-						  seed_dw[i]);
+				wr32(hw, I40E_VFQF_HKEY1(i, vf_id), seed_dw[i]);
 		} else {
 			dev_err(&pf->pdev->dev, "Cannot set RSS seed - invalid VSI type\n");
 		}
@@ -8392,9 +8399,7 @@ static int i40e_config_rss_reg(struct i40e_vsi *vsi, const u8 *seed,
 			if (lut_size != I40E_VF_HLUT_ARRAY_SIZE)
 				return -EINVAL;
 			for (i = 0; i <= I40E_VFQF_HLUT_MAX_INDEX; i++)
-				i40e_write_rx_ctl(hw,
-						  I40E_VFQF_HLUT1(i, vf_id),
-						  lut_dw[i]);
+				wr32(hw, I40E_VFQF_HLUT1(i, vf_id), lut_dw[i]);
 		} else {
 			dev_err(&pf->pdev->dev, "Cannot set RSS LUT - invalid VSI type\n");
 		}
@@ -11434,10 +11439,12 @@ static int i40e_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		  round_jiffies(jiffies + pf->service_timer_period));
 
 	/* add this PF to client device list and launch a client service task */
-	err = i40e_lan_add_device(pf);
-	if (err)
-		dev_info(&pdev->dev, "Failed to add PF to client API service list: %d\n",
-			 err);
+	if (pf->flags & I40E_FLAG_IWARP_ENABLED) {
+		err = i40e_lan_add_device(pf);
+		if (err)
+			dev_info(&pdev->dev, "Failed to add PF to client API service list: %d\n",
+				 err);
+	}
 
 #ifdef I40E_FCOE
 	/* create FCoE interface */
@@ -11589,6 +11596,11 @@ static void i40e_remove(struct pci_dev *pdev)
 	if (pf->service_task.func)
 		cancel_work_sync(&pf->service_task);
 
+	/* Client close must be called explicitly here because the timer
+	 * has been stopped.
+	 */
+	i40e_notify_client_of_netdev_close(pf->vsi[pf->lan_vsi], false);
+
 	if (pf->flags & I40E_FLAG_SRIOV_ENABLED) {
 		i40e_free_vfs(pf);
 		pf->flags &= ~I40E_FLAG_SRIOV_ENABLED;
@@ -11615,10 +11627,11 @@ static void i40e_remove(struct pci_dev *pdev)
 		i40e_vsi_release(pf->vsi[pf->lan_vsi]);
 
 	/* remove attached clients */
-	ret_code = i40e_lan_del_device(pf);
-	if (ret_code) {
-		dev_warn(&pdev->dev, "Failed to delete client device: %d\n",
-			 ret_code);
+	if (pf->flags & I40E_FLAG_IWARP_ENABLED) {
+		ret_code = i40e_lan_del_device(pf);
+		if (ret_code)
+			dev_warn(&pdev->dev, "Failed to delete client device: %d\n",
+				 ret_code);
 	}
 
 	/* shutdown and destroy the HMC */
@@ -11828,6 +11841,11 @@ static void i40e_shutdown(struct pci_dev *pdev)
 	del_timer_sync(&pf->service_timer);
 	cancel_work_sync(&pf->service_task);
 	i40e_fdir_teardown(pf);
+
+	/* Client close must be called explicitly here because the timer
+	 * has been stopped.
+	 */
+	i40e_notify_client_of_netdev_close(pf->vsi[pf->lan_vsi], false);
 
 	if (pf->wol_en && (pf->flags & I40E_FLAG_WOL_MC_MAGIC_PKT_WAKE))
 		i40e_enable_mc_magic_wake(pf);
